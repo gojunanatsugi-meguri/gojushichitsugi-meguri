@@ -3,12 +3,18 @@ import { reactive, computed } from 'vue'
 // 仮データ：実際のスポット・クイズ内容は枚方信用金庫様・協力店との
 // 打ち合わせを踏まえて Firestore 側に置き換える（Week 1-2 で確定）
 export const spots = [
-  { id: 'spot1', name: '枚方涼氷', category: 'かき氷', coupon: '練乳シングルをサービス' },
-  { id: 'spot2', name: 'KAORU COFFEE', category: 'カフェ', coupon: 'ドリンク10%引き' },
-  { id: 'spot3', name: '呼人堂', category: 'どら焼き', coupon: '1,500円以上で1個増量' },
-  { id: 'spot4', name: 'うつわとカフェ Lau', category: 'カフェ', coupon: 'お会計より100円引き' },
-  { id: 'spot5', name: 'くらわんか餅巴堂', category: '餅菓子', coupon: '500円以上でやきもち1個' },
+  { id: 'spot1', name: '枚方涼氷', category: 'かき氷', coupon: '練乳シングルをサービス', qrValue: 'gojushichi:spot1' },
+  { id: 'spot2', name: 'KAORU COFFEE', category: 'カフェ', coupon: 'ドリンク10%引き', qrValue: 'gojushichi:spot2' },
+  { id: 'spot3', name: '呼人堂', category: 'どら焼き', coupon: '1,500円以上で1個増量', qrValue: 'gojushichi:spot3' },
+  { id: 'spot4', name: 'うつわとカフェ Lau', category: 'カフェ', coupon: 'お会計より100円引き', qrValue: 'gojushichi:spot4' },
+  { id: 'spot5', name: 'くらわんか餅巴堂', category: '餅菓子', coupon: '500円以上でやきもち1個', qrValue: 'gojushichi:spot5' },
 ]
+
+// 実際の協力店QRもこの形式（gojushichi:スポットID）で発行する想定。
+// スポットIDから逆引きするためのヘルパー
+export function findSpotByQrValue(value) {
+  return spots.find((s) => s.qrValue === value)
+}
 
 // 位（ランク）の段階。歩いた距離(km)の累計で判定する
 export const ranks = [

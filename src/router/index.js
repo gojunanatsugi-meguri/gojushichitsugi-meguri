@@ -4,6 +4,7 @@ import ScanView from '../views/ScanView.vue'
 import QuizView from '../views/QuizView.vue'
 import CouponsView from '../views/CouponsView.vue'
 import MapView from '../views/MapView.vue'
+import TestQrView from '../views/TestQrView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/quiz', name: 'quiz', component: QuizView },
     { path: '/coupons', name: 'coupons', component: CouponsView },
     { path: '/map', name: 'map', component: MapView },
+    { path: '/test-qr', name: 'test-qr', component: TestQrView }, // 開発中のテスト専用。本番では削除
   ],
 })
 
