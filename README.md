@@ -3,8 +3,6 @@
 ソイチャレ2026アイデアコンテスト「五十七次めぐり ― 歩いて、学んで、まちに寄る ―」のアプリ実装。
 枚方宿の協力店をQRコードで巡り、クイズに答えてクーポンを獲得し、日々の歩数で宿場印の位が上がっていくウォーキングアプリ。
 
-企画・進め方の全体像はロードマップを参照してください（チームに共有済み）。
-
 ## 技術スタック
 
 - **画面構築**: Vue 3 + Vite
@@ -13,7 +11,7 @@
 - **QRスキャン**: `@capacitor-mlkit/barcode-scanning`（未導入、Week2で検証予定）
 - **歩数取得**: HealthKit / Health Connect 用プラグイン（未導入、Week2で検証予定・最大の技術リスク）
 
-## 今の状態（スケルトン）
+## 今の状態
 
 画面遷移と全体の流れを確認できる状態です。データはすべて仮のサンプル・ローカルの状態管理（`src/store/appState.js`）で、Firebase にはまだ繋がっていません。
 
@@ -42,7 +40,7 @@ npx cap open ios        # Xcodeで開く
 npx cap open android    # Android Studioで開く
 ```
 
-## やること（次のマイルストーン）
+## やること
 
 - [ ] Firebaseプロジェクトを作成し、Firestore/Authenticationを設定
 - [ ] `@capacitor-mlkit/barcode-scanning` を導入し、実際のQR読み取りに置き換える
