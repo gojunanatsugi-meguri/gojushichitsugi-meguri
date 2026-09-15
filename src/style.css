@@ -1,0 +1,63 @@
+:root {
+  --ink: #241f1b;
+  --ink-soft: #6e6255;
+  --paper: #f6f1e7;
+  --surface: #ffffff;
+  --indigo: #2b4a63;
+  --indigo-soft: #dce7ee;
+  --gold: #a9782f;
+  --gold-soft: #f1e4c6;
+  --line: #e1d5c0;
+
+  /* シニア向け：文字とタップ領域は大きめを基準にする（要調整・中さん担当） */
+  --tap-min: 56px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+button { font-family: inherit; }
+
+.screen {
+  padding: 20px 18px 100px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  min-height: var(--tap-min);
+  border-radius: 12px;
+  border: none;
+  background: var(--indigo);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn:active { opacity: .85; }
+
+.btn.secondary {
+  background: var(--surface);
+  color: var(--indigo);
+  border: 2px solid var(--indigo);
+}
