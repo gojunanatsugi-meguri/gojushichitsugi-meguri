@@ -8,7 +8,7 @@ import state, { spots } from '../store/appState'
     <p class="lede">現在地とスポットの位置だけを表示するシンプルな地図（位置情報はこの表示だけに使用）。</p>
 
     <div class="card map-placeholder">
-      📍 実際の地図は Google Maps 等と連携予定（川村さんタスク）
+      ⚫︎ 実際の地図は Google Maps 等と連携予定（川村さんタスク）
     </div>
 
     <section class="card" style="margin-top: 16px;">
