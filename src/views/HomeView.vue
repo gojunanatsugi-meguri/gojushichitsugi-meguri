@@ -9,7 +9,7 @@ const stampedCount = computed(() => state.stampedSpotIds.length)
 <template>
   <div class="screen">
     <h1>五十七次めぐり</h1>
-    <p class="lede">枚方宿を歩いて、宿場印を集めよう。</p>
+    <p class="lede">枚方宿を歩いて、宿場印を集めよう！</p>
 
     <section class="card rank-card">
       <div class="rank-badge" :style="{ background: rank.color }">{{ rank.label }}</div>
