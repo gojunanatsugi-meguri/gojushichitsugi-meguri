@@ -42,15 +42,15 @@ class MapScreen extends StatelessWidget {
                 children: [
                   const Text('スポット一覧', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
-                  ...spots.map((spot) {
-                    final got = appState.stampedSpotIds.contains(spot.id);
+                  ...checkpoints.map((cp) {
+                    final got = appState.stampedCheckpointIds.contains(cp.id);
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Row(
                         children: [
                           Text(got ? '●' : '○', style: TextStyle(fontSize: 20, color: got ? AppColors.gold : AppColors.line)),
                           const SizedBox(width: 10),
-                          Text('${spot.name}（${spot.category}）'),
+                          Expanded(child: Text('${cp.name}：${shopsAt(cp.id).map((s) => s.name).join('、')}')),
                         ],
                       ),
                     );

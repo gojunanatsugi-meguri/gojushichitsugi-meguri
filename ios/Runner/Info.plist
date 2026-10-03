@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>協力店のQRコードを読み取ってスタンプを獲得するためにカメラを使います。</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>地図に現在地を表示するため、またQRを読み取ったときにお店の近くにいるかを確かめるために使います。位置は記録・送信しません。</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
