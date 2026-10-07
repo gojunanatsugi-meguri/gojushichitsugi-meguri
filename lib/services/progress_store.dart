@@ -8,8 +8,14 @@ class ProgressStore {
   ProgressStore(this.prefs);
 
   static const _key = 'meguri_progress_v1';
+  // 名前は進み具合と別に保存する（進み具合を最初からにしても名前は残す）
+  static const _nameKey = 'meguri_player_name_v1';
 
   final SharedPreferences prefs;
+
+  String? loadPlayerName() => prefs.getString(_nameKey);
+
+  Future<void> savePlayerName(String name) => prefs.setString(_nameKey, name);
 
   Map<String, dynamic>? load() {
     final raw = prefs.getString(_key);

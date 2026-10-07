@@ -9,6 +9,9 @@ class AppColors {
   static const indigo = Color(0xFF2B4A63);
   static const indigoSoft = Color(0xFFDCE7EE);
   static const gold = Color(0xFFA9782F);
+  // 朱色（スタート画面の筆の丸・「枚方宿」の印）
+  static const shu = Color(0xFFB8402F);
+  static const indigoDeep = Color(0xFF1F3550);
 }
 
 final appTheme = ThemeData(
