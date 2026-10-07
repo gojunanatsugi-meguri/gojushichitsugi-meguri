@@ -56,6 +56,24 @@ void main() {
     expect(AppState(store: store).stampedCheckpointIds, isEmpty);
   });
 
+  test('名前はアプリを開き直しても残り、進み具合をリセットしても消えない', () async {
+    final store = await storeWith({});
+    expect(AppState(store: store).hasPlayerName, false);
+
+    AppState(store: store)
+      ..setPlayerName('  ひらかた  ')
+      ..resetProgress();
+    expect(AppState(store: store).playerName, 'ひらかた');
+  });
+
+  test('名前は空白だけなら保存せず、長すぎる分は切り詰める', () {
+    final s = AppState()..setPlayerName('   ');
+    expect(s.hasPlayerName, false);
+
+    s.setPlayerName('あいうえおかきくけこさしすせそ');
+    expect(s.playerName, 'あいうえおかきくけこ');
+  });
+
   test('全地点のスタンプがそろったら達成になる', () {
     final s = AppState();
     for (final shop in shops) {
