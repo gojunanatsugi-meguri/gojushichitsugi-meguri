@@ -6,13 +6,14 @@ import 'screens/start_screen.dart';
 import 'services/health_service.dart';
 import 'services/progress_store.dart';
 import 'theme.dart';
+import 'services/firebase_setup.dart';
 
 Future<void> main() async {
   // runApp より前にプラグイン（SharedPreferences）を使うために必要
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   runApp(GojushichitsugiApp(
-    store: ProgressStore(prefs),
+    store: await createProgressStore(prefs),
     readDistanceKm: HealthService.getTodayDistanceKm,
   ));
 }
