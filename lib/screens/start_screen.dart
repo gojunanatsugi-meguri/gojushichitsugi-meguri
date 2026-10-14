@@ -240,7 +240,7 @@ class _StatsCard extends StatelessWidget {
       (Icons.place_outlined, '進捗', '${appState.stampedCheckpointIds.length}/${checkpoints.length}'),
       (Icons.workspace_premium_outlined, '今の位', appState.currentRank.label),
       // 歩数の取得ができるまでは表示しない
-      (Icons.directions_walk, '本日', '— 歩'),
+      (Icons.directions_walk, '本日', '${appState.stepCount}歩'),
     ];
 
     return Container(
