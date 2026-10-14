@@ -322,9 +322,9 @@ class _MapScreenState extends State<MapScreen> {
 
                   const SizedBox(height: 10),
 
-                  ...spots.map((spot) {
+                  ...checkpoints.map((cp) {
                     final got =
-                        appState.stampedSpotIds.contains(spot.id);
+                        appState.stampedCheckpointIds.contains(cp.id);
 
                     return Padding(
                       padding:
@@ -343,8 +343,10 @@ class _MapScreenState extends State<MapScreen> {
 
                           const SizedBox(width: 10),
 
-                          Text(
-                            '${spot.name}（${spot.category}）',
+                          Expanded(
+                            child: Text(
+                              '${cp.name}：${shopsAt(cp.id).map((s) => s.name).join('、')}',
+                            ),
                           ),
                         ],
                       ),

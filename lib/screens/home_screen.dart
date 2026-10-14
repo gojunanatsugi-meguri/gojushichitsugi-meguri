@@ -10,7 +10,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final rank = appState.currentRank;
-    final stampedCount = appState.stampedSpotIds.length;
+    final stampedCount = appState.stampedCheckpointIds.length;
 
     return Scaffold(
       body: SafeArea(
@@ -20,7 +20,8 @@ class HomeScreen extends StatelessWidget {
             const Text('五十七次めぐり',
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink)),
             const SizedBox(height: 4),
-            const Text('枚方宿を歩いて、宿場印を集めよう。', style: TextStyle(color: AppColors.inkSoft)),
+            Text('${appState.hasPlayerName ? '${appState.playerName}さん、' : ''}枚方宿を歩いて、宿場印を集めよう。',
+                style: const TextStyle(color: AppColors.inkSoft)),
             const SizedBox(height: 20),
 
             // ランクカード
@@ -86,18 +87,18 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('スタンプ帳（$stampedCount / ${spots.length}）',
+                  Text('スタンプ帳（$stampedCount / ${checkpoints.length}）',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
-                  ...spots.map((spot) {
-                    final got = appState.stampedSpotIds.contains(spot.id);
+                  ...checkpoints.map((cp) {
+                    final got = appState.stampedCheckpointIds.contains(cp.id);
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Row(
                         children: [
                           Text(got ? '●' : '○', style: TextStyle(fontSize: 20, color: got ? AppColors.gold : AppColors.line)),
                           const SizedBox(width: 10),
-                          Text(spot.name),
+                          Text(cp.name),
                         ],
                       ),
                     );
