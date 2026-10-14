@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/app_state.dart';
-import 'screens/root_screen.dart';
+import 'screens/start_screen.dart';
 import 'services/progress_store.dart';
 import 'theme.dart';
 
@@ -27,7 +27,7 @@ class GojushichitsugiApp extends StatelessWidget {
         title: '五十七次めぐり',
         debugShowCheckedModeBanner: false,
         theme: appTheme,
-        home: const RootScreen(),
+        home: const StartScreen(),
       ),
     );
   }

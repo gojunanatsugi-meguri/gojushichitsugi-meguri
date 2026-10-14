@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gojushichitsugi_meguri/main.dart';
 
+import 'widget_test.dart' show startWithName;
+
 Future<void> scanDemo(WidgetTester tester, String shopName) async {
   await tester.tap(find.byIcon(Icons.qr_code_scanner));
   await tester.pumpAndSettle();
@@ -20,6 +22,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
+    await startWithName(tester, 'テスト');
 
     await scanDemo(tester, '枚方涼氷');
     expect(find.text('第1地点のスタンプを獲得しました！'), findsOneWidget);

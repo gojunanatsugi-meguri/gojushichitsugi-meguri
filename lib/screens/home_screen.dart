@@ -20,7 +20,8 @@ class HomeScreen extends StatelessWidget {
             const Text('五十七次めぐり',
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink)),
             const SizedBox(height: 4),
-            const Text('枚方宿を歩いて、宿場印を集めよう。', style: TextStyle(color: AppColors.inkSoft)),
+            Text('${appState.hasPlayerName ? '${appState.playerName}さん、' : ''}枚方宿を歩いて、宿場印を集めよう。',
+                style: const TextStyle(color: AppColors.inkSoft)),
             const SizedBox(height: 20),
 
             // ランクカード

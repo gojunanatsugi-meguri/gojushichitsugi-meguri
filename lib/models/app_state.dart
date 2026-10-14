@@ -53,9 +53,27 @@ class AppState extends ChangeNotifier {
   // 進み具合の保存先。null のとき（テストなど）は保存しない
   final ProgressStore? store;
 
+  // 最初に入力してもらう名前（ニックネーム可）。未入力なら null
+  String? playerName;
+
+  static const playerNameMaxLength = 10;
+
   AppState({this.store}) {
     final saved = store?.load();
     if (saved != null) _restore(saved);
+    final name = store?.loadPlayerName()?.trim();
+    if (name != null && name.isNotEmpty) playerName = name;
+  }
+
+  bool get hasPlayerName => playerName != null;
+
+  // 前後の空白は取り除く。空なら保存しない
+  void setPlayerName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    playerName = trimmed.length > playerNameMaxLength ? trimmed.substring(0, playerNameMaxLength) : trimmed;
+    store?.savePlayerName(playerName!);
+    notifyListeners();
   }
 
   Set<String> get stampedCheckpointIds => stampedAt.keys.toSet();
