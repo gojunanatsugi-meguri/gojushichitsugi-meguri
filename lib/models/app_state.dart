@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/progress_store.dart';
-import '../services/health_service.dart';
 import 'meguri_data.dart';
 
 // 画面側は今までどおり app_state.dart だけ import すればデータも使えるようにする
@@ -59,12 +58,23 @@ class AppState extends ChangeNotifier {
 
   static const playerNameMaxLength = 10;
 
-  AppState({this.store}) {
+  // 歩数から距離(km)を読む処理（main.dart から HealthService を渡す）。
+  // null のとき（テストなど）は読まない。テスト環境にはヘルスケアがないため
+  final Future<double> Function()? readDistanceKm;
+
+  bool _disposed = false;
+
+  AppState({this.store, this.readDistanceKm}) {
     final saved = store?.load();
     if (saved != null) _restore(saved);
     final name = store?.loadPlayerName()?.trim();
     if (name != null && name.isNotEmpty) playerName = name;
-    refreshSteps();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   bool get hasPlayerName => playerName != null;
@@ -101,9 +111,20 @@ class AppState extends ChangeNotifier {
     if (distanceKm > 550) distanceKm = 550;
     notifyListeners();
   }
+
+  // アプリの起動時と、アプリに戻ってきたときに main.dart から呼ぶ
   Future<void> refreshSteps() async {
-    distanceKm = await HealthService.getTodayDistanceKm();
-    if (distanceKm > 550) distanceKm = 550;
+    final read = readDistanceKm;
+    if (read == null) return;
+    final double km;
+    try {
+      km = await read();
+    } catch (_) {
+      // ヘルスケア（Android はヘルスコネクト）が使えない端末でも落ちないよう、今の距離のままにする
+      return;
+    }
+    if (_disposed) return;
+    distanceKm = km > 550 ? 550 : km;
     notifyListeners();
   }
 
