@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082356770059",
+    "project_id": "gojushichi-meguri",
+    "storage_bucket": "gojushichi-meguri.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082356770059:android:04a4da6e50716fb081ee0e",
+        "android_client_info": {
+          "package_name": "jp.ac.oit.gojushichitsugi_meguri"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwETw73pV0hLi_i9HQLKsnIDU3Jx7wif0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
