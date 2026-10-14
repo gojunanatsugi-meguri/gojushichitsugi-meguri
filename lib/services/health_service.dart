@@ -14,4 +14,13 @@ class HealthService {
     final steps = await _health.getTotalStepsInInterval(midnight, now);
     return ((steps ?? 0) * 0.00075);
   }
+
+  static Future<int> getTodaySteps() async {
+  final granted = await _health.requestAuthorization([HealthDataType.STEPS]);
+  if (!granted) return 0;
+  final now = DateTime.now();
+  final midnight = DateTime(now.year, now.month, now.day);
+  final steps = await _health.getTotalStepsInInterval(midnight, now);
+  return steps ?? 0;
+}
 }

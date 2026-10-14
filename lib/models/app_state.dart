@@ -38,7 +38,7 @@ class AppState extends ChangeNotifier {
     currentTabIndex = index;
     notifyListeners();
   }
-
+  int stepCount = 0;
   // デモ用の暫定値。実際は Health 連携プラグインから取得した歩数を距離に換算する
   double distanceKm = 0;
   // 地点ID → スタンプを獲得した日時。日時は、あとでサーバー側で
