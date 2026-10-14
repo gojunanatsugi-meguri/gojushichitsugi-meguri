@@ -1,6 +1,6 @@
 build/
 .dart_tool/
-.flutter-plugin-dependencies
+.flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
@@ -10,3 +10,5 @@ ios/Flutter/ephemeral/
 android/.gradle
 android/local.properties
 .DS_Store
+# Vue 版のころの npm の部品置き場。Flutter 版では使わない
+node_modules/
