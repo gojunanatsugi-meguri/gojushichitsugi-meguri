@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/progress_store.dart';
+import '../services/health_service.dart';
 import 'meguri_data.dart';
 
 // 画面側は今までどおり app_state.dart だけ import すればデータも使えるようにする
@@ -40,7 +41,7 @@ class AppState extends ChangeNotifier {
   }
 
   // デモ用の暫定値。実際は Health 連携プラグインから取得した歩数を距離に換算する
-  double distanceKm = 42;
+  double distanceKm = 0;
   // 地点ID → スタンプを獲得した日時。日時は、あとでサーバー側で
   // 「移動時間が短すぎないか」などを確かめるときに使えるよう残している
   final Map<String, DateTime> stampedAt = {};
@@ -63,6 +64,7 @@ class AppState extends ChangeNotifier {
     if (saved != null) _restore(saved);
     final name = store?.loadPlayerName()?.trim();
     if (name != null && name.isNotEmpty) playerName = name;
+    refreshSteps();
   }
 
   bool get hasPlayerName => playerName != null;
@@ -96,6 +98,11 @@ class AppState extends ChangeNotifier {
 
   void addDemoDistance(double km) {
     distanceKm = ((distanceKm + km) * 10).round() / 10;
+    if (distanceKm > 550) distanceKm = 550;
+    notifyListeners();
+  }
+  Future<void> refreshSteps() async {
+    distanceKm = await HealthService.getTodayDistanceKm();
     if (distanceKm > 550) distanceKm = 550;
     notifyListeners();
   }
