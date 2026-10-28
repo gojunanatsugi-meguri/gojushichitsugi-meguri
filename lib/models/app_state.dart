@@ -49,6 +49,9 @@ class AppState extends ChangeNotifier {
   final Map<String, bool> quizResults = {};
   // 地点ID（正解したクイズ）→ 選んだ店ID。1問につきクーポンは1店だけ
   final Map<String, String> couponChoices = {};
+  // 店ID → クーポンを使った日時。一度使ったクーポンは元に戻らない。
+  // 日時は、店員さんが「いつ使ったか」を画面で確かめられるように残している
+  final Map<String, DateTime> couponUsedAt = {};
 
   // 進み具合の保存先。null のとき（テストなど）は保存しない
   final ProgressStore? store;
@@ -165,11 +168,22 @@ class AppState extends ChangeNotifier {
     _changed();
   }
 
+  bool isCouponUsed(String shopId) => couponUsedAt.containsKey(shopId);
+
+  // お店でクーポンを使ったときに呼ぶ。持っていないクーポンや、使用済みのクーポンは使えない
+  void useCoupon(String shopId, {DateTime? now}) {
+    if (!couponChoices.containsValue(shopId)) return;
+    if (isCouponUsed(shopId)) return;
+    couponUsedAt[shopId] = now ?? DateTime.now();
+    _changed();
+  }
+
   // 開発用：めぐりの進み具合を最初からにする
   void resetProgress() {
     stampedAt.clear();
     quizResults.clear();
     couponChoices.clear();
+    couponUsedAt.clear();
     lastScannedCheckpointId = null;
     _changed();
   }
@@ -184,6 +198,7 @@ class AppState extends ChangeNotifier {
         'lastScannedCheckpointId': lastScannedCheckpointId,
         'quizResults': quizResults,
         'couponChoices': couponChoices,
+        'couponUsedAt': couponUsedAt.map((k, v) => MapEntry(k, v.toIso8601String())),
       };
 
   // 地点やクイズのデータが変わって、保存済みのIDが存在しなくなっていても落ちないよう、
@@ -213,6 +228,14 @@ class AppState extends ChangeNotifier {
         if (quizResults['${e.key}'] == true && findShopById('${e.value}') != null) {
           couponChoices['${e.key}'] = '${e.value}';
         }
+      }
+    }
+    // 持っているクーポンの使用記録だけを読み込む
+    final used = json['couponUsedAt'];
+    if (used is Map) {
+      for (final e in used.entries) {
+        final at = DateTime.tryParse('${e.value}');
+        if (couponChoices.containsValue('${e.key}') && at != null) couponUsedAt['${e.key}'] = at;
       }
     }
   }
