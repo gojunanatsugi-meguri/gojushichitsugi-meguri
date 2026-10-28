@@ -1,5 +1,9 @@
 // 地点・協力店・クイズのデータと、それを探す関数。
 // Flutter に依存しないので、印刷物を作るスクリプト（tool/）からも読み込める
+//
+// データの出どころ：
+//   アプリ起動時に meguri_loader.dart が Firestore から読み込み、checkpoints / shops を差し替える。
+//   読めなかったとき（圏外・初回起動で通信なし など）は、下の直書きデータ（defaultXxx）をそのまま使う
 
 // 地点（枚方宿の中の5〜6か所）。スタンプは地点ごとに1つ
 class Checkpoint {
@@ -15,6 +19,14 @@ class Checkpoint {
     required this.name,
     this.quiz,
   });
+
+  // Firestore の文書（id と中身の Map）から作る
+  factory Checkpoint.fromMap(String id, Map<String, dynamic> m) => Checkpoint(
+        id: id,
+        order: (m['order'] as num).toInt(),
+        name: m['name'] as String,
+        quiz: m['quiz'] == null ? null : Quiz.fromMap(Map<String, dynamic>.from(m['quiz'] as Map)),
+      );
 }
 
 // 協力店。1つの地点に複数の店が属する。QRは店ごとに設置する
@@ -41,6 +53,19 @@ class Shop {
     required this.lng,
     required this.staffPin,
   });
+
+  factory Shop.fromMap(String id, Map<String, dynamic> m) => Shop(
+        id: id,
+        checkpointId: m['checkpointId'] as String,
+        name: m['name'] as String,
+        category: m['category'] as String,
+        coupon: m['coupon'] as String,
+        qrValue: m['qrValue'] as String,
+        // Firestore の数値は int で返ることもあるので num で受けて double にする
+        lat: (m['lat'] as num).toDouble(),
+        lng: (m['lng'] as num).toDouble(),
+        staffPin: m['staffPin'] as String,
+      );
 }
 
 class Quiz {
@@ -56,12 +81,20 @@ class Quiz {
     required this.correctAnswer,
     required this.hint,
   });
+
+  factory Quiz.fromMap(Map<String, dynamic> m) => Quiz(
+        question: m['question'] as String,
+        options: List<String>.from(m['options'] as List),
+        correctAnswer: m['correctAnswer'] as String,
+        hint: m['hint'] as String,
+      );
 }
 
 // 仮データ：実際の地点・クイズ内容は枚方信用金庫様・協力店との
 // 打ち合わせを踏まえて Firestore 側に置き換える（Week 1-2 で確定）
 // 地点名・座標・クイズ（「（仮）」付き）はすべて仮の値
-const List<Checkpoint> checkpoints = [
+// ※ Firestore を書き換えたら、ここ（圏外用の予備）と tool/firestore_seed/seed_data.json も合わせて直す
+const List<Checkpoint> defaultCheckpoints = [
   Checkpoint(
     id: 'cp1',
     order: 1,
@@ -115,7 +148,7 @@ const List<Checkpoint> checkpoints = [
 // 座標：shop1（枚方凍氷 三矢町4-1）・shop3（呼人堂 岡本町10-3）・shop5（巴堂 伊加賀北町6-12）は
 // 住所から国土地理院の住所検索で取得した値。shop2・shop4 は住所未確認のため仮の値。
 // 詳しくは docs/現地確認リスト.md
-const List<Shop> shops = [
+const List<Shop> defaultShops = [
   Shop(id: 'shop1', checkpointId: 'cp1', name: '枚方涼氷', category: 'かき氷', coupon: '練乳シングルをサービス',
       qrValue: 'gojushichi:3d9103edc06bc9d8', lat: 34.814632, lng: 135.643219, staffPin: '1570'),
   Shop(id: 'shop2', checkpointId: 'cp2', name: 'KAORU COFFEE', category: 'カフェ', coupon: 'ドリンク10%引き',
@@ -128,6 +161,11 @@ const List<Shop> shops = [
       qrValue: 'gojushichi:9a2c4404c797a967', lat: 34.809853, lng: 135.640305, staffPin: '8083'),
 ];
 
+// アプリ内で実際に使うデータ。最初は直書きデータで、Firestore から読めたら差し替わる。
+// 名前は前と同じなので、これを使っている画面や tool/ のスクリプトは書き換え不要
+List<Checkpoint> checkpoints = defaultCheckpoints;
+List<Shop> shops = defaultShops;
+
 const qrPrefix = 'gojushichi:';
 
 Shop? findShopByQrValue(String value) => shops.where((s) => s.qrValue == value.trim()).firstOrNull;
@@ -139,4 +177,3 @@ Checkpoint? findCheckpointById(String? id) => checkpoints.where((c) => c.id == i
 List<Shop> shopsAt(String checkpointId) => shops.where((s) => s.checkpointId == checkpointId).toList();
 
 Checkpoint? nextCheckpointOf(Checkpoint cp) => checkpoints.where((c) => c.order == cp.order + 1).firstOrNull;
-
