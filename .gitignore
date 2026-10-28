@@ -12,3 +12,6 @@ android/local.properties
 .DS_Store
 # Vue 版のころの npm の部品置き場。Flutter 版では使わない
 node_modules/
+# Firestore 初期データ投入用（鍵と部品置き場は Git に入れない）
+tool/firestore_seed/serviceAccountKey.json
+tool/firestore_seed/node_modules/
