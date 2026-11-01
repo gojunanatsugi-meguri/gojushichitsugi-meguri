@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:geolocator/geolocator.dart';
 
 import '../models/app_state.dart';
@@ -9,8 +11,9 @@ import '../models/route_guide.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
-// ホーム画面。地図を大きく出し、下に「次の目的地」と QR 読取のボタンを置く。
-// 地図が読めない方でも、下のカードの文字だけで次にすることが分かるようにしている
+// ホーム画面。地図を大きく出し、地点を押したときだけ、下にその地点のカード
+// （現在地からの歩数の目安と QR 読取のボタン）を出す。閉じると、その分地図が広くなる。
+// 左上の「地点の一覧」は、押すたびに開いたり閉じたりする
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -30,6 +33,12 @@ class _MapScreenState extends State<MapScreen> {
   static const double _nearbyMeters = 3000;
 
   LatLng? _currentPosition;
+  // 歩いている間も現在地を追いかける（歩数の目安を、いる場所に合わせて変えるため）
+  StreamSubscription<Position>? _positionSub;
+  // 地図や一覧で選んだ地点。null のときは下のカードを出さない
+  String? _selectedId;
+  // 「地点の一覧」を開いているか
+  bool _listOpen = false;
   bool _zoomLocked = false;
   bool _gettingLocation = false;
 
@@ -118,6 +127,7 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _currentPosition = currentLocation;
       });
+      _watchPosition();
 
       if (!quiet || _isNearRoute(currentLocation)) {
         _mapController.move(
@@ -164,61 +174,36 @@ class _MapScreenState extends State<MapScreen> {
     _zoom(-1.0);
   }
 
-  void _showCheckpoint(Checkpoint cp) {
-    final pos = checkpointPosition(cp.id);
-    if (pos != null) _mapController.move(pos, 17.0);
-  }
-
-  void _showSpotList(AppState appState, Checkpoint? target) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.paper,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          children: [
-            const Text(
-              '地点の一覧',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            ...checkpoints.map((cp) {
-              final got = appState.stampedCheckpointIds.contains(cp.id);
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: _CheckpointBadge(order: cp.order, stamped: got, isTarget: cp.id == target?.id),
-                title: Text(cp.name, style: const TextStyle(fontSize: 18)),
-                subtitle: Text(shopsAt(cp.id).map((s) => '${s.name}（${s.category}）').join('、')),
-                trailing: got ? const Text('スタンプ済み', style: TextStyle(color: AppColors.gold)) : null,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _showCheckpoint(cp);
-                },
-              );
-            }),
-          ],
+  // 位置情報の許可が取れたあとに呼ぶ。10m 動くごとに現在地を更新する
+  void _watchPosition() {
+    if (_positionSub != null) return;
+    try {
+      _positionSub = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
         ),
-      ),
-    );
+      ).listen(
+        (p) {
+          if (mounted) setState(() => _currentPosition = LatLng(p.latitude, p.longitude));
+        },
+        onError: (_) {},
+      );
+    } catch (_) {}
   }
 
-  // 現在地が分かって枚方宿の近くにいれば現在地から、そうでなければ最後に行った地点から測る。
-  // どちらも分からない（まだ1か所も行っていない・位置情報がオフ）ときは null
-  WalkEstimate? _estimateTo(AppState appState, Checkpoint target) {
-    final to = checkpointPosition(target.id);
-    if (to == null) return null;
-    final here = _currentPosition;
-    if (here != null && _isNearRoute(here)) return estimateWalk(here, to);
-    final last = appState.lastScannedCheckpointId;
-    final from = last == null ? null : checkpointPosition(last);
-    return from == null ? null : estimateWalk(from, to);
+  void _select(Checkpoint cp) {
+    setState(() {
+      _selectedId = cp.id;
+      _listOpen = false;
+    });
+    final pos = checkpointPosition(cp.id);
+    if (pos != null) _mapController.move(pos, _mapController.camera.zoom < 16 ? 16.0 : _mapController.camera.zoom);
   }
 
   @override
   void dispose() {
+    _positionSub?.cancel();
     _mapController.dispose();
     super.dispose();
   }
@@ -228,7 +213,17 @@ class _MapScreenState extends State<MapScreen> {
     final appState = context.watch<AppState>();
     final stamped = appState.stampedCheckpointIds;
     final target = nextTarget(stamped);
+    final shown = findCheckpointById(_selectedId);
     final positions = _checkpointPositions;
+
+    // 最後に読んだ地点のクイズにまだ答えていなければ知らせる（クイズ画面はその地点の問題を出すため）
+    final lastId = appState.lastScannedCheckpointId;
+    final quizPending = lastId != null &&
+        findCheckpointById(lastId)?.quiz != null &&
+        !appState.quizResults.containsKey(lastId);
+    final usableCoupons = appState.obtainedCoupons.where((s) => !appState.isCouponUsed(s.id)).length;
+    // 左上の一覧の幅。右のズームボタンにかぶらないようにする
+    final listWidth = (MediaQuery.of(context).size.width - 24 - 64 - 8).clamp(200.0, 320.0);
 
     return Scaffold(
       body: Column(
@@ -261,21 +256,44 @@ class _MapScreenState extends State<MapScreen> {
 
                     MarkerLayer(
                       markers: [
-                        for (final cp in checkpoints)
+                        // 選んでいる地点は、ほかの印に隠れないよう最後に描く
+                        for (final cp in [
+                          ...checkpoints.where((c) => c.id != shown?.id),
+                          ?shown,
+                        ])
                           if (checkpointPosition(cp.id) case final pos?)
-                            Marker(
-                              point: pos,
-                              width: 48,
-                              height: 48,
-                              child: GestureDetector(
-                                onTap: () => _showCheckpoint(cp),
-                                child: _CheckpointBadge(
-                                  order: cp.order,
-                                  stamped: stamped.contains(cp.id),
-                                  isTarget: cp.id == target?.id,
+                            if (cp.id == shown?.id)
+                              Marker(
+                                point: pos,
+                                width: _SelectedMarker.width,
+                                height: _SelectedMarker.height,
+                                child: GestureDetector(
+                                  onTap: () => _select(cp),
+                                  child: _SelectedMarker(
+                                    name: spotName(cp),
+                                    badge: _CheckpointBadge(
+                                      order: cp.order,
+                                      stamped: stamped.contains(cp.id),
+                                      isTarget: cp.id == target?.id,
+                                      selected: true,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Marker(
+                                point: pos,
+                                width: _CheckpointBadge.box,
+                                height: _CheckpointBadge.box,
+                                child: GestureDetector(
+                                  onTap: () => _select(cp),
+                                  child: _CheckpointBadge(
+                                    order: cp.order,
+                                    stamped: stamped.contains(cp.id),
+                                    isTarget: cp.id == target?.id,
+                                  ),
                                 ),
                               ),
-                            ),
 
                         if (_currentPosition != null)
                           Marker(
@@ -315,17 +333,37 @@ class _MapScreenState extends State<MapScreen> {
                   ],
                 ),
 
-                // 上：宿場名と進み具合
+                // 左上：宿場名と進み具合、その下に地点の一覧
                 Positioned(
                   top: 0,
                   left: 0,
+                  bottom: 0,
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: _StatusChip(
-                        stampedCount: stamped.length,
-                        total: checkpoints.length,
-                        steps: appState.stepCount,
+                      child: SizedBox(
+                        width: listWidth,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _StatusChip(
+                              stampedCount: stamped.length,
+                              total: checkpoints.length,
+                              steps: appState.stepCount,
+                            ),
+                            const SizedBox(height: 8),
+                            Flexible(
+                              child: _SpotToggleList(
+                                open: _listOpen,
+                                onToggle: () => setState(() => _listOpen = !_listOpen),
+                                stampedIds: stamped,
+                                targetId: target?.id,
+                                onSelect: _select,
+                                openWidth: listWidth,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -351,40 +389,43 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
 
-                // 左下：地点の一覧
-                Positioned(
-                  left: 12,
-                  bottom: 12,
-                  child: Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(999),
-                    elevation: 3,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(999),
-                      onTap: () => _showSpotList(appState, target),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.list, color: AppColors.indigo),
-                            SizedBox(width: 6),
-                            Text('地点の一覧', style: TextStyle(fontSize: 16, color: AppColors.indigo)),
-                          ],
-                        ),
-                      ),
+                // 下：お知らせ（答えていないクイズ・使えるクーポン）
+                if (quizPending || usableCoupons > 0)
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 24,
+                    child: Column(
+                      children: [
+                        if (quizPending)
+                          _Notice(icon: Icons.help_outline, text: 'クイズにまだ答えていません', onTap: () => appState.goToTab(2)),
+                        if (usableCoupons > 0)
+                          _Notice(
+                            icon: Icons.confirmation_number,
+                            text: '使えるクーポンが$usableCoupons枚あります',
+                            onTap: () => appState.goToTab(3),
+                          ),
+                      ],
                     ),
                   ),
-                ),
               ],
             ),
           ),
 
-          _NextPanel(
-            appState: appState,
-            target: target,
-            estimate: target == null ? null : _estimateTo(appState, target),
-            onShowTarget: target == null ? null : () => _showCheckpoint(target),
+          // 地点を選んでいるときだけ出す
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            alignment: Alignment.topCenter,
+            child: shown == null
+                ? const SizedBox(width: double.infinity)
+                : _SpotPanel(
+                    appState: appState,
+                    checkpoint: shown,
+                    isTarget: shown.id == target?.id,
+                    here: _currentPosition,
+                    onShow: () => _select(shown),
+                    onClose: () => setState(() => _selectedId = null),
+                  ),
           ),
         ],
       ),
@@ -394,20 +435,25 @@ class _MapScreenState extends State<MapScreen> {
 
 // 地図の上の地点の印。行った地点は金色のチェック、次の目的地は朱色で大きく出す
 class _CheckpointBadge extends StatelessWidget {
-  const _CheckpointBadge({required this.order, required this.stamped, required this.isTarget});
+  const _CheckpointBadge({required this.order, required this.stamped, required this.isTarget, this.selected = false});
 
   final int order;
   final bool stamped;
   final bool isTarget;
+  // 地図で選んでいる地点は、少し大きくする
+  final bool selected;
+
+  // 外側の大きさ（地図の印・一覧の行のどちらでも同じ）
+  static const box = 52.0;
 
   @override
   Widget build(BuildContext context) {
-    final size = isTarget ? 44.0 : 36.0;
+    final size = (isTarget ? 44.0 : 36.0) + (selected ? 8 : 0);
     final fill = stamped ? AppColors.gold : (isTarget ? AppColors.shu : Colors.white);
     final fg = stamped || isTarget ? Colors.white : AppColors.indigo;
     // 外側の大きさを固定する（一覧の行の左に置いたとき、横いっぱいに広がらないように）
     return SizedBox.square(
-      dimension: 48,
+      dimension: box,
       child: Center(
         child: Container(
           width: size,
@@ -417,7 +463,7 @@ class _CheckpointBadge extends StatelessWidget {
             color: fill,
             shape: BoxShape.circle,
             border: Border.all(color: stamped || isTarget ? Colors.white : AppColors.indigo, width: 3),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: selected ? 8 : 4, offset: Offset(0, selected ? 2 : 0))],
           ),
           child: stamped
               ? const Icon(Icons.check, color: Colors.white, size: 20)
@@ -426,6 +472,68 @@ class _CheckpointBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+// 選んだ地点の印。上にお店の名前の吹き出しを付ける。
+// 印の中心が地点の位置に来るよう、吹き出しと同じ高さの空きを下にも取って、上下対称にしている
+class _SelectedMarker extends StatelessWidget {
+  const _SelectedMarker({required this.name, required this.badge});
+
+  final String name;
+  final Widget badge;
+
+  static const _bubbleHeight = 44.0;
+  static const width = 200.0;
+  static const height = _bubbleHeight * 2 + _CheckpointBadge.box;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: _bubbleHeight,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                ),
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ink),
+                ),
+              ),
+              CustomPaint(size: const Size(14, 7), painter: _BubbleArrow()),
+            ],
+          ),
+        ),
+        badge,
+        const SizedBox(height: _bubbleHeight),
+      ],
+    );
+  }
+}
+
+// 吹き出しの下の小さな三角
+class _BubbleArrow extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+    canvas.drawPath(path, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _StatusChip extends StatelessWidget {
@@ -479,34 +587,161 @@ class _MapButton extends StatelessWidget {
   }
 }
 
-// 下のカード。次の目的地・そこまでの目安・お知らせ・QR 読取のボタン
-class _NextPanel extends StatelessWidget {
-  const _NextPanel({
-    required this.appState,
-    required this.target,
-    required this.estimate,
-    required this.onShowTarget,
+// 左上の「地点の一覧」。押すたびに、その場で開いたり閉じたりする。
+// 閉じているときは小さなボタンの幅で、開いたときだけ openWidth まで広がる
+class _SpotToggleList extends StatelessWidget {
+  const _SpotToggleList({
+    required this.open,
+    required this.onToggle,
+    required this.stampedIds,
+    required this.targetId,
+    required this.onSelect,
+    required this.openWidth,
   });
 
-  final AppState appState;
-  final Checkpoint? target;
-  final WalkEstimate? estimate;
-  final VoidCallback? onShowTarget;
+  final bool open;
+  final VoidCallback onToggle;
+  final Set<String> stampedIds;
+  final String? targetId;
+  final void Function(Checkpoint) onSelect;
+  final double openWidth;
 
   @override
   Widget build(BuildContext context) {
-    final target = this.target;
+    const title = Text('地点の一覧', style: TextStyle(fontSize: 16, color: AppColors.indigo));
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(open ? 12 : 999),
+      elevation: 3,
+      clipBehavior: Clip.antiAlias,
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: open ? openWidth : null,
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: open ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                onTap: onToggle,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: open ? MainAxisSize.max : MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.list, color: AppColors.indigo),
+                      const SizedBox(width: 6),
+                      open ? const Expanded(child: title) : title,
+                      const SizedBox(width: 4),
+                      Icon(open ? Icons.expand_less : Icons.expand_more, color: AppColors.indigo),
+                    ],
+                  ),
+                ),
+              ),
+              if (open)
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.only(bottom: 6),
+                    children: [
+                      for (final cp in checkpoints)
+                        InkWell(
+                          onTap: () => onSelect(cp),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(6, 2, 12, 2),
+                            decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.line))),
+                            child: Row(
+                              children: [
+                                _CheckpointBadge(
+                                  order: cp.order,
+                                  stamped: stampedIds.contains(cp.id),
+                                  isTarget: cp.id == targetId,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(spotName(cp),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                                      Text(
+                                        stampedIds.contains(cp.id) ? '${spotCategory(cp)}・スタンプ済み' : spotCategory(cp),
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: stampedIds.contains(cp.id) ? AppColors.gold : AppColors.inkSoft),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-    // 最後に読んだ地点のクイズにまだ答えていなければ知らせる（クイズ画面はその地点の問題を出すため）
-    final lastId = appState.lastScannedCheckpointId;
-    final quizPending = lastId != null &&
-        findCheckpointById(lastId)?.quiz != null &&
-        !appState.quizResults.containsKey(lastId);
-    final usableCoupons = appState.obtainedCoupons.where((s) => !appState.isCouponUsed(s.id)).length;
+// 下のカード。地図で選んだ地点・現在地からの目安・QR 読取のボタン
+class _SpotPanel extends StatelessWidget {
+  const _SpotPanel({
+    required this.appState,
+    required this.checkpoint,
+    required this.isTarget,
+    required this.here,
+    required this.onShow,
+    required this.onClose,
+  });
+
+  final AppState appState;
+  final Checkpoint checkpoint;
+  final bool isTarget;
+  final LatLng? here;
+  final VoidCallback onShow;
+  final VoidCallback onClose;
+
+  // 歩数の目安は現在地から測る。現在地が分からないときと、枚方宿から遠いときは歩数を出さない
+  Widget? _distanceText(Checkpoint cp) {
+    final to = checkpointPosition(cp.id);
+    final from = here;
+    if (to == null) return null;
+    if (from == null) {
+      return const Text('右上の ◎ で現在地を出すと、ここまでの歩数が分かります',
+          style: TextStyle(fontSize: 14, color: AppColors.inkSoft));
+    }
+    final meters = const Distance().as(LengthUnit.Meter, from, to);
+    if (meters > _MapScreenState._nearbyMeters) {
+      return Text('約${(meters / 1000).toStringAsFixed(1)}km（枚方宿から離れています）',
+          style: const TextStyle(fontSize: 15, color: AppColors.inkSoft));
+    }
+    final e = estimateWalk(from, to);
+    return Text('あと約${_withComma(e.steps)}歩（約${e.minutes}分）',
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.shu));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cp = checkpoint;
+    final stamped = appState.stampedCheckpointIds.contains(cp.id);
+    final label = isTarget
+        ? '次の目的地'
+        : stamped
+            ? 'スタンプ済みの地点'
+            : '選んだ地点';
+    final distance = _distanceText(cp);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 12, 12, 16),
       decoration: const BoxDecoration(
         color: AppColors.paper,
         border: Border(top: BorderSide(color: AppColors.line)),
@@ -515,53 +750,47 @@ class _NextPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (target == null) ...[
-            const Text('枚方宿の地点を、すべてめぐりました！',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.ink)),
-            const SizedBox(height: 4),
-            const Text('スタンプ帳で、集めたスタンプを見てみましょう。', style: TextStyle(color: AppColors.inkSoft)),
-          ] else
-            InkWell(
-              onTap: onShowTarget,
+          Row(
+            children: [
+              Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: AppColors.inkSoft))),
+              IconButton(
+                icon: const Icon(Icons.close, size: 26),
+                tooltip: '閉じる',
+                onPressed: onClose,
+              ),
+            ],
+          ),
+          InkWell(
+            onTap: onShow,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _CheckpointBadge(order: target.order, stamped: false, isTarget: true),
+                  _CheckpointBadge(order: cp.order, stamped: stamped, isTarget: isTarget),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('次の目的地', style: TextStyle(fontSize: 14, color: AppColors.inkSoft)),
-                        Text(target.name,
+                        Text(spotName(cp),
                             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink)),
-                        Text(shopsAt(target.id).map((s) => '${s.name}（${s.category}）').join('、'),
+                        Text('${cp.name}・${spotCategory(cp)}',
                             style: const TextStyle(fontSize: 15, color: AppColors.inkSoft)),
-                        if (estimate case final e?)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text('あと約${_withComma(e.steps)}歩（約${e.minutes}分）',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.shu)),
-                          ),
+                        if (distance != null)
+                          Padding(padding: const EdgeInsets.only(top: 4), child: distance),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-
-          if (quizPending)
-            _Notice(icon: Icons.help_outline, text: 'クイズにまだ答えていません', onTap: () => appState.goToTab(2)),
-          if (usableCoupons > 0)
-            _Notice(
-              icon: Icons.confirmation_number,
-              text: '使えるクーポンが$usableCoupons枚あります',
-              onTap: () => appState.goToTab(3),
-            ),
-
+          ),
           const SizedBox(height: 12),
-          target == null
-              ? BigButton(label: 'スタンプ帳を見る', filled: true, onPressed: () => appState.goToTab(0))
-              : BigButton(label: 'QRを読み取る', filled: true, onPressed: () => appState.goToTab(1)),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: BigButton(label: 'QRを読み取る', filled: true, onPressed: () => appState.goToTab(1)),
+          ),
         ],
       ),
     );

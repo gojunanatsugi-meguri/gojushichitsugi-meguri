@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
+import '../models/route_guide.dart';
 import '../theme.dart';
+import '../widgets/stamp_mark.dart';
 
 // スタンプ帳。地点ごとのスタンプを図鑑のように並べ、まだのものは空き枠で見せる
 class HomeScreen extends StatelessWidget {
@@ -173,51 +175,7 @@ class _RankCard extends StatelessWidget {
   }
 }
 
-const _kanjiNumbers = ['壱', '弐', '参', '肆', '伍', '陸', '漆', '捌', '玖', '拾'];
-
-String _kanjiNumber(int n) => n >= 1 && n <= _kanjiNumbers.length ? _kanjiNumbers[n - 1] : '$n';
-
 String _dateLabel(DateTime d) => '${d.month}月${d.day}日';
-
-// 押したスタンプの見た目。朱色の二重丸に、地点の番号（漢数字）を入れる。
-// 地点ごとに少しずつ傾けて、手で押したように見せる
-class _StampMark extends StatelessWidget {
-  const _StampMark({required this.order, required this.size});
-
-  final int order;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final tilt = [-0.12, 0.08, -0.05, 0.14, -0.09][order % 5];
-    return Transform.rotate(
-      angle: tilt,
-      child: Container(
-        width: size,
-        height: size,
-        padding: EdgeInsets.all(size * 0.05),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.shu, width: size * 0.04),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.shu, width: size * 0.02),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('枚方宿', style: TextStyle(fontSize: size * 0.13, color: AppColors.shu, fontWeight: FontWeight.w700)),
-              Text(_kanjiNumber(order),
-                  style: TextStyle(fontSize: size * 0.34, color: AppColors.shu, fontWeight: FontWeight.w900, height: 1.1)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // まだ押していないスタンプの空き枠
 class _EmptyMark extends StatelessWidget {
@@ -272,19 +230,19 @@ class _StampCard extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, c) {
                     final size = (c.biggest.shortestSide * 0.9).clamp(40.0, 120.0);
-                    return Center(child: got ? _StampMark(order: checkpoint.order, size: size) : _EmptyMark(size: size));
+                    return Center(child: got ? StampMark(order: checkpoint.order, size: size) : _EmptyMark(size: size));
                   },
                 ),
               ),
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(checkpoint.name,
+                child: Text(spotName(checkpoint),
                     style: TextStyle(
                         fontSize: 17, fontWeight: FontWeight.w700, color: got ? AppColors.ink : AppColors.inkSoft)),
               ),
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(got ? _dateLabel(stampedAt!) : 'まだ',
+                child: Text(got ? _dateLabel(stampedAt!) : '-',
                     style: TextStyle(fontSize: 14, color: got ? AppColors.shu : AppColors.inkSoft)),
               ),
             ],
@@ -322,17 +280,15 @@ class _StampDetail extends StatelessWidget {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         children: [
-          Center(child: got ? _StampMark(order: checkpoint.order, size: 140) : const _EmptyMark(size: 140)),
+          Center(child: got ? StampMark(order: checkpoint.order, size: 140) : const _EmptyMark(size: 140)),
           const SizedBox(height: 16),
-          Text('No.${checkpoint.order.toString().padLeft(2, '0')}　${checkpoint.name}',
+          Text('No.${checkpoint.order.toString().padLeft(2, '0')}　${spotName(checkpoint)}',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink)),
           const SizedBox(height: 16),
-          _DetailRow(label: '押した日', value: got ? _dateLabel(at) : 'まだ'),
-          _DetailRow(
-            label: 'お店',
-            value: shopsAt(checkpoint.id).map((s) => '${s.name}（${s.category}）').join('\n'),
-          ),
+          _DetailRow(label: '押した日', value: got ? _dateLabel(at) : '-'),
+          _DetailRow(label: '種類', value: spotCategory(checkpoint)),
+          _DetailRow(label: '場所', value: checkpoint.name),
           if (quizText != null) _DetailRow(label: 'クイズ', value: quizText),
           if (!got) ...[
             const SizedBox(height: 12),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'stamp_get_screen.dart';
 
 // 回答結果は AppState に地点ごとに記録する。この画面は IndexedStack で
 // 破棄されずに残るため、画面側に持つと前の地点の結果が残ってしまう
@@ -14,6 +15,9 @@ class QuizScreen extends StatelessWidget {
     final appState = context.watch<AppState>();
     final cp = findCheckpointById(appState.lastScannedCheckpointId);
 
+    // key を地点IDにすると、地点が変わったときに _QuizBody の状態（ヒント表示など）が作り直される
+    if (cp != null) return _QuizBody(key: ValueKey(cp.id), checkpoint: cp);
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -21,33 +25,17 @@ class QuizScreen extends StatelessWidget {
           children: [
             const Text('クイズ', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink)),
             const SizedBox(height: 16),
-            if (cp == null)
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('まだQRを読み取っていません。先にお店のQRを読み取って、スタンプをもらいましょう。',
-                        style: TextStyle(fontSize: 20)),
-                    const SizedBox(height: 16),
-                    BigButton(label: 'QR読取へ進む', filled: true, onPressed: () => appState.goToTab(1)),
-                  ],
-                ),
-              )
-            else ...[
-              // 宿場印との引き換え画面ができるまでは、達成したことだけを伝える
-              if (appState.allStamped) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(12)),
-                  child: const Text('全地点のスタンプがそろいました！\n宿場印と引き換えられます。',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-                ),
-                const SizedBox(height: 16),
-              ],
-              // key を地点IDにすると、地点が変わったときに _QuizBody の状態（ヒント表示など）が作り直される
-              _QuizBody(key: ValueKey(cp.id), checkpoint: cp),
-            ],
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('まだQRを読み取っていません。先にお店のQRを読み取って、スタンプをもらいましょう。',
+                      style: TextStyle(fontSize: 20)),
+                  const SizedBox(height: 16),
+                  BigButton(label: 'QR読取へ進む', filled: true, onPressed: () => appState.goToTab(1)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -66,6 +54,8 @@ class _QuizBody extends StatefulWidget {
 
 class _QuizBodyState extends State<_QuizBody> {
   bool showHint = false;
+  // QRを読んだ直後は、スタンプを獲得した画面を出し、「クイズに進む」を押してから問題を出す
+  bool showQuiz = false;
 
   // クーポンは1問につき1店だけで、選び直しができないので確認をはさむ
   Future<void> _confirmCoupon(Shop shop) async {
@@ -87,44 +77,50 @@ class _QuizBodyState extends State<_QuizBody> {
     final appState = context.watch<AppState>();
     final cp = widget.checkpoint;
     final quiz = cp.quiz;
-    final stampText = Text('${cp.name}のスタンプを獲得しました！',
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.indigo));
+    final result = appState.quizResults[cp.id];
 
-    // 最後の地点：クイズはなし
-    if (quiz == null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          stampText,
-          const SizedBox(height: 16),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('最後の地点です。おつかれさまでした！', style: TextStyle(fontSize: 20)),
-                // 順番どおりに回らなかった人もいるので、残りの地点を伝える
-                if (!appState.allStamped) ...[
-                  const SizedBox(height: 8),
-                  Text('まだスタンプがない地点：${appState.unstampedCheckpoints.map((c) => c.name).join('、')}',
-                      style: const TextStyle(fontSize: 18, color: AppColors.inkSoft)),
-                ],
-                const SizedBox(height: 16),
-                BigButton(label: 'スタンプ帳を見る', filled: true, onPressed: () => appState.goToTab(0)),
-              ],
-            ),
-          ),
-        ],
+    // QRを読んだ直後（まだ答えていない）と、クイズのない最後の地点は、スタンプ獲得の画面を出す
+    if (quiz == null || (result == null && !showQuiz)) {
+      return StampGetScreen(
+        checkpoint: cp,
+        onQuiz: quiz == null ? null : () => setState(() => showQuiz = true),
       );
     }
 
-    final result = appState.quizResults[cp.id];
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const Text('クイズ', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink)),
+            const SizedBox(height: 16),
+            // 宿場印との引き換え画面ができるまでは、達成したことだけを伝える
+            if (appState.allStamped) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(12)),
+                child: const Text('全地点のスタンプがそろいました！\n宿場印と引き換えられます。',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+              const SizedBox(height: 16),
+            ],
+            _quizContent(appState, cp, quiz, result),
+          ],
+        ),
+      ),
+    );
+  }
 
+  // クイズの中身（問題・不正解・クーポン選び）
+  Widget _quizContent(AppState appState, Checkpoint cp, Quiz quiz, bool? result) {
     // まだ答えていない：問題を出す
     if (result == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          stampText,
+          Text('${cp.name}のクイズ',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.indigo)),
           const SizedBox(height: 4),
           const Text('答えは、次の地点のまわりにあります。', style: TextStyle(fontSize: 18, color: AppColors.inkSoft)),
           const SizedBox(height: 16),

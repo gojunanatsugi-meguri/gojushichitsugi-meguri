@@ -14,6 +14,14 @@ class AppColors {
   static const indigoDeep = Color(0xFF1F3550);
 }
 
+// 筆文字が入っていない端末でも、明朝の太字で和の雰囲気を出す（スタート画面・スタンプ獲得画面など）
+const minchoStyle = TextStyle(
+  fontFamily: 'Hiragino Mincho ProN',
+  fontFamilyFallback: ['Yu Mincho', 'Noto Serif JP', 'serif'],
+  fontWeight: FontWeight.w900,
+  color: AppColors.ink,
+);
+
 final appTheme = ThemeData(
   scaffoldBackgroundColor: AppColors.paper,
   colorScheme: ColorScheme.fromSeed(

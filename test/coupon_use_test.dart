@@ -67,6 +67,8 @@ void main() {
 
     // 第1地点で正解して KAORU COFFEE のクーポンをもらう
     await scanDemo(tester, '枚方涼氷');
+    await tester.tap(find.text('クイズに進む'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('KAORU'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('KAORU COFFEE'));
