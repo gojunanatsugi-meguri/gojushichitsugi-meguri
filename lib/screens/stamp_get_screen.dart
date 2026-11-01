@@ -48,7 +48,7 @@ class StampGetScreen extends StatelessWidget {
             child: Column(
               children: [
                 // 右上の設定ボタン（root_screen.dart で重ねている）の分の空き
-                const SizedBox(height: 48),
+                const SizedBox(height: 60),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),

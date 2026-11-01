@@ -7,7 +7,7 @@ import 'package:gojushichitsugi_meguri/main.dart';
 import 'package:gojushichitsugi_meguri/widgets/stamp_mark.dart';
 
 import 'quiz_flow_test.dart' show scanDemo;
-import 'widget_test.dart' show startWithName;
+import 'widget_test.dart' show startApp;
 
 Future<void> openStampBook(WidgetTester tester) async {
   await tester.tap(find.byIcon(Icons.menu_book));
@@ -21,7 +21,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await openStampBook(tester);
 
     expect(find.text('？'), findsNWidgets(5));
@@ -42,7 +42,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await scanDemo(tester, '枚方凍氷');
     await openStampBook(tester);
 
@@ -62,7 +62,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await scanDemo(tester, '枚方凍氷');
 
     expect(find.byType(StampPress), findsOneWidget);
@@ -83,26 +83,42 @@ void main() {
     expect(find.byType(StampPress), findsNothing);
   });
 
-  testWidgets('スタンプ獲得の画面の歯車から、設定画面で名前を変えられる', (tester) async {
+  testWidgets('スタンプ獲得の画面の歯車から設定画面が開き、使い方・位置情報・歩数・情報の扱いを見られる', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await scanDemo(tester, '枚方凍氷');
 
     await tester.tap(find.byTooltip('設定'));
     await tester.pumpAndSettle();
-    expect(find.text('ひらかた'), findsOneWidget);
+    // 位置情報の状態はスマホに問い合わせるので、テストでは行があることだけを確かめる
+    expect(find.text('位置情報'), findsOneWidget);
+    expect(find.text('今日の歩数：0歩'), findsOneWidget);
+    expect(find.text('© OpenStreetMap の協力者'), findsOneWidget);
 
-    await tester.tap(find.text('お名前'));
+    await tester.tap(find.text('使い方を見る'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'くずは');
-    await tester.pump();
-    await tester.tap(find.text('この名前にする'));
+    expect(find.text('協力店のQRを読む'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
-    expect(find.text('くずは'), findsOneWidget);
+
+    await tester.tap(find.text('情報の扱いについて'));
+    await tester.pumpAndSettle();
+    expect(find.text('めぐりの記録'), findsOneWidget);
+  });
+
+  testWidgets('小さい画面（iPhone SE）でも、設定画面がはみ出さない', (tester) async {
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const GojushichitsugiApp());
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('小さい画面（iPhone SE）でも、スタンプ獲得の画面がはみ出さない', (tester) async {
@@ -111,7 +127,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await scanDemo(tester, '枚方凍氷');
     expect(tester.takeException(), isNull);
   });
@@ -122,7 +138,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await openStampBook(tester);
     expect(tester.takeException(), isNull);
   });

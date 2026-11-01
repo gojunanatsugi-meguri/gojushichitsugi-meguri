@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gojushichitsugi_meguri/main.dart';
 
 import 'quiz_flow_test.dart' show scanDemo;
-import 'widget_test.dart' show startWithName;
+import 'widget_test.dart' show startApp;
 
 // 左上の「枚方宿」のカードを押して、地点の一覧を開く・閉じる
 Future<void> toggleList(WidgetTester tester) async {
@@ -18,14 +18,14 @@ Future<void> toggleList(WidgetTester tester) async {
 void main() {
   testWidgets('開いた直後は、下のカードを出さない', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     expect(find.text('次の目的地'), findsNothing);
     expect(find.text('QRを読み取る'), findsNothing);
   });
 
   testWidgets('設定ボタンは、ホームにはなく、ほかのタブの画面にはある', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     expect(find.byTooltip('設定'), findsNothing);
 
     for (final icon in [Icons.menu_book, Icons.qr_code_scanner, Icons.confirmation_number]) {
@@ -37,7 +37,7 @@ void main() {
 
   testWidgets('「枚方宿」のカードを押すたびに、地点の一覧が開いたり閉じたりする', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
 
     await toggleList(tester);
     expect(tester.takeException(), isNull);
@@ -49,7 +49,7 @@ void main() {
 
   testWidgets('一覧で地点を選ぶと下のカードが出て、×で閉じる', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
 
     await toggleList(tester);
     await tester.tap(find.text('くらわんか餅巴堂'));
@@ -71,7 +71,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
 
     await toggleList(tester);
     await tester.tap(find.text('枚方凍氷'));
@@ -92,7 +92,7 @@ void main() {
 
   testWidgets('現在地が分からないときは、歩数の代わりに現在地の出し方を案内する', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
 
     await toggleList(tester);
     await tester.tap(find.text('枚方凍氷'));
@@ -106,7 +106,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'ひらかた');
+    await startApp(tester);
     await toggleList(tester);
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('うつわとカフェ Lau'));

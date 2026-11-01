@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
 import '../theme.dart';
-import 'name_screen.dart';
+import '../widgets/how_to_sheet.dart';
 import 'root_screen.dart';
+import 'settings_screen.dart';
 
 // 画面の番号（AppState.goToTab の番号。ホームは地図の画面）
 const _tabHome = 4;
@@ -14,27 +15,13 @@ const _tabCoupons = 3;
 
 const _mincho = minchoStyle;
 
-// アプリを開くと毎回最初に出る画面。
-// 名前が未入力なら名前の入力へ、入力済みならそのまま各画面へ進む
+// アプリを開くと毎回最初に出る画面。ボタンを押すと、そのまま各画面へ進む
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
 
   void _open(BuildContext context, int tab) {
-    final appState = context.read<AppState>()..goToTab(tab);
-    if (appState.hasPlayerName) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const RootScreen()));
-    } else {
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NameScreen()));
-    }
-  }
-
-  void _showHowTo(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.paper,
-      showDragHandle: true,
-      builder: (_) => const _HowToSheet(),
-    );
+    context.read<AppState>().goToTab(tab);
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const RootScreen()));
   }
 
   @override
@@ -50,10 +37,11 @@ class StartScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: IconButton(
-                  tooltip: '名前の変更',
-                  icon: const Icon(Icons.settings, color: AppColors.inkSoft),
+                  tooltip: '設定',
+                  padding: const EdgeInsets.all(10),
+                  icon: const Icon(Icons.settings, color: AppColors.inkSoft, size: 36),
                   onPressed: () =>
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NameScreen(editing: true))),
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
                 ),
               ),
               const _Title(),
@@ -89,7 +77,7 @@ class StartScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _SubButton(icon: Icons.help_outline, label: '使い方', onPressed: () => _showHowTo(context)),
+                    child: _SubButton(icon: Icons.help_outline, label: '使い方', onPressed: () => showHowTo(context)),
                   ),
                 ],
               ),
@@ -293,59 +281,6 @@ class _SubButton extends StatelessWidget {
         onPressed: onPressed,
         icon: Icon(icon, size: 24),
         label: Text(label, style: const TextStyle(fontSize: 18, color: AppColors.ink)),
-      ),
-    );
-  }
-}
-
-// 「使い方」：めぐりの流れを3つの段階で説明する
-class _HowToSheet extends StatelessWidget {
-  const _HowToSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    const steps = [
-      ('協力店のQRを読む', '着いたしるしにスタンプがもらえます。'),
-      ('クイズに答える', '答えは「次の地点の周辺」にあります。ヒントはいつでも見られます。'),
-      ('クーポンを選ぶ', '正解すると、次の地点のお店から1店を選んでクーポンがもらえます。'),
-    ];
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('使い方', style: _mincho.copyWith(fontSize: 24)),
-            const SizedBox(height: 16),
-            for (var i = 0; i < steps.length; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: AppColors.indigoDeep,
-                      child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 16)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(steps[i].$1, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 2),
-                          Text(steps[i].$2, style: const TextStyle(fontSize: 16, color: AppColors.inkSoft)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }

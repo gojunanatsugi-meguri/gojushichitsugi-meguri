@@ -43,14 +43,15 @@ class AppHeader extends StatelessWidget {
   }
 }
 
-// 設定画面を開く歯車のボタン
+// 設定画面を開く歯車のボタン。高齢の方でも押しやすいよう、押せる範囲を広めにしている
 class SettingsButton extends StatelessWidget {
   const SettingsButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.settings, color: AppColors.indigoDeep, size: 28),
+      padding: const EdgeInsets.all(10),
+      icon: const Icon(Icons.settings, color: AppColors.indigoDeep, size: 36),
       tooltip: '設定',
       onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
     );

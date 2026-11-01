@@ -9,7 +9,7 @@ import 'package:gojushichitsugi_meguri/models/app_state.dart';
 import 'package:gojushichitsugi_meguri/services/progress_store.dart';
 
 import 'quiz_flow_test.dart' show scanDemo;
-import 'widget_test.dart' show startWithName;
+import 'widget_test.dart' show startApp;
 
 // 第1地点で正解して、KAORU COFFEE（shop2）のクーポンを持っている状態を作る
 AppState stateWithCoupon({ProgressStore? store}) {
@@ -63,7 +63,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const GojushichitsugiApp());
-    await startWithName(tester, 'テスト');
+    await startApp(tester);
 
     // 第1地点で正解して KAORU COFFEE のクーポンをもらう
     await scanDemo(tester, '枚方凍氷');
