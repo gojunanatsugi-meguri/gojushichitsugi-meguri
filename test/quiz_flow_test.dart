@@ -24,7 +24,7 @@ void main() {
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'テスト');
 
-    await scanDemo(tester, '枚方涼氷');
+    await scanDemo(tester, '枚方凍氷');
     expect(find.text('スタンプ獲得！'), findsOneWidget);
     expect(find.text('第1地点'), findsOneWidget);
 
