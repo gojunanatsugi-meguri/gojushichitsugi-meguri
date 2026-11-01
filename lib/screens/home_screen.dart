@@ -33,8 +33,7 @@ class HomeScreen extends StatelessWidget {
             const Text('スタンプ帳',
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.ink)),
             const SizedBox(height: 4),
-            Text('${appState.hasPlayerName ? '${appState.playerName}さん、' : ''}枚方宿を歩いて、宿場印を集めよう。',
-                style: const TextStyle(color: AppColors.inkSoft)),
+            const Text('枚方宿を歩いて、宿場印を集めよう。', style: TextStyle(color: AppColors.inkSoft)),
             const SizedBox(height: 16),
 
             _RankCard(appState: appState, rank: rank),

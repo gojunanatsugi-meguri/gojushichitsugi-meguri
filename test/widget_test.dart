@@ -1,58 +1,27 @@
-// スタート画面 → 名前の入力 → ホーム（地図）と、起動時の画面の流れのテスト
+// スタート画面 → ホーム（地図）と、起動時の画面の流れのテスト
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:gojushichitsugi_meguri/main.dart';
-import 'package:gojushichitsugi_meguri/services/progress_store.dart';
 
-// スタート画面から名前を入力して、ホームまで進む（ほかのテストでも使う）
-Future<void> startWithName(WidgetTester tester, String name) async {
+// スタート画面の「はじめる」で、ホームまで進む（ほかのテストでも使う）
+Future<void> startApp(WidgetTester tester) async {
   await tester.tap(find.text('はじめる'));
-  await tester.pumpAndSettle();
-  await tester.enterText(find.byType(TextField), name);
-  await tester.pump();
-  await tester.tap(find.text('これではじめる'));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('初めて起動すると、スタート画面 → 名前の入力 → ホームの順に進む', (tester) async {
+  testWidgets('初めて起動しても、名前の入力はなく「はじめる」でそのままホームへ進む', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
 
     expect(find.text('五十七次'), findsOneWidget);
     expect(find.text('0/5'), findsOneWidget);
-    expect(find.text('はじめる'), findsOneWidget);
 
-    await tester.tap(find.text('はじめる'));
-    await tester.pumpAndSettle();
-    expect(find.text('お名前を教えてください'), findsOneWidget);
-
-    // 空白だけでは進めない
-    await tester.enterText(find.byType(TextField), '   ');
-    await tester.pump();
-    await tester.tap(find.text('これではじめる'));
-    await tester.pumpAndSettle();
-    expect(find.text('お名前を教えてください'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), ' ひらかた ');
-    await tester.pump();
-    await tester.tap(find.text('これではじめる'));
-    await tester.pumpAndSettle();
+    await startApp(tester);
+    expect(find.byType(TextField), findsNothing);
     expect(find.text('枚方宿'), findsOneWidget);
     expect(find.text('スタンプ 0 / 5'), findsOneWidget);
-  });
-
-  testWidgets('名前を入力済みなら、「はじめる」でそのままホームへ進む', (tester) async {
-    SharedPreferences.setMockInitialValues({'meguri_player_name_v1': 'ひらかた'});
-    final prefs = await SharedPreferences.getInstance();
-
-    await tester.pumpWidget(GojushichitsugiApp(store: ProgressStore(prefs)));
-
-    await tester.tap(find.text('はじめる'));
-    await tester.pumpAndSettle();
-    expect(find.text('枚方宿'), findsOneWidget);
 
     // スタンプ帳はタブから開ける
     await tester.tap(find.byIcon(Icons.menu_book));
@@ -60,21 +29,12 @@ void main() {
     expect(find.text(' / 5 収集'), findsOneWidget);
   });
 
-  testWidgets('設定ボタンから名前を変えると、スタート画面に戻る', (tester) async {
-    SharedPreferences.setMockInitialValues({'meguri_player_name_v1': 'ひらかた'});
-    final prefs = await SharedPreferences.getInstance();
-
-    await tester.pumpWidget(GojushichitsugiApp(store: ProgressStore(prefs)));
-    await tester.tap(find.byIcon(Icons.settings));
+  testWidgets('スタート画面の歯車から設定画面が開く', (tester) async {
+    await tester.pumpWidget(const GojushichitsugiApp());
+    await tester.tap(find.byTooltip('設定'));
     await tester.pumpAndSettle();
-    expect(find.text('ひらかた'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), 'くずは');
-    await tester.pump();
-    await tester.tap(find.text('この名前にする'));
-    await tester.pumpAndSettle();
-    expect(find.text('はじめる'), findsOneWidget);
-    expect(prefs.getString('meguri_player_name_v1'), 'くずは');
+    expect(find.text('使い方を見る'), findsOneWidget);
+    expect(find.text('お名前'), findsNothing);
   });
 
   testWidgets('小さい画面（iPhone SE）でも、スタート画面がはみ出さない', (tester) async {
