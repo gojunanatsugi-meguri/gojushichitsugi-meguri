@@ -1,4 +1,4 @@
-// スタート画面 → 名前の入力 → スタンプ帳（ホーム）と、起動時の画面の流れのテスト
+// スタート画面 → 名前の入力 → ホーム（地図）と、起動時の画面の流れのテスト
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gojushichitsugi_meguri/main.dart';
 import 'package:gojushichitsugi_meguri/services/progress_store.dart';
 
-// スタート画面から名前を入力して、スタンプ帳まで進む（ほかのテストでも使う）
+// スタート画面から名前を入力して、ホームまで進む（ほかのテストでも使う）
 Future<void> startWithName(WidgetTester tester, String name) async {
   await tester.tap(find.text('はじめる'));
   await tester.pumpAndSettle();
@@ -18,7 +18,7 @@ Future<void> startWithName(WidgetTester tester, String name) async {
 }
 
 void main() {
-  testWidgets('初めて起動すると、スタート画面 → 名前の入力 → スタンプ帳の順に進む', (tester) async {
+  testWidgets('初めて起動すると、スタート画面 → 名前の入力 → ホームの順に進む', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
 
     expect(find.text('五十七次'), findsOneWidget);
@@ -40,11 +40,11 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('これではじめる'));
     await tester.pumpAndSettle();
-    expect(find.text('スタンプ帳（0 / 5）'), findsOneWidget);
-    expect(find.text('ひらかたさん、枚方宿を歩いて、宿場印を集めよう。'), findsOneWidget);
+    expect(find.text('次の目的地'), findsOneWidget);
+    expect(find.text('第1地点'), findsOneWidget);
   });
 
-  testWidgets('名前を入力済みなら、「はじめる」でそのままスタンプ帳へ進む', (tester) async {
+  testWidgets('名前を入力済みなら、「はじめる」でそのままホームへ進む', (tester) async {
     SharedPreferences.setMockInitialValues({'meguri_player_name_v1': 'ひらかた'});
     final prefs = await SharedPreferences.getInstance();
 
@@ -52,7 +52,12 @@ void main() {
 
     await tester.tap(find.text('はじめる'));
     await tester.pumpAndSettle();
-    expect(find.text('スタンプ帳（0 / 5）'), findsOneWidget);
+    expect(find.text('次の目的地'), findsOneWidget);
+
+    // スタンプ帳はタブから開ける
+    await tester.tap(find.byIcon(Icons.menu_book));
+    await tester.pumpAndSettle();
+    expect(find.text(' / 5 収集'), findsOneWidget);
   });
 
   testWidgets('設定ボタンから名前を変えると、スタート画面に戻る', (tester) async {
