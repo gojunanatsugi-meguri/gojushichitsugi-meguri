@@ -13,7 +13,7 @@ import '../widgets/common.dart';
 
 // ホーム画面。地図を大きく出し、地点を押したときだけ、下にその地点のカード
 // （現在地からの歩数の目安と QR 読取のボタン）を出す。閉じると、その分地図が広くなる。
-// 左上の「地点の一覧」は、押すたびに開いたり閉じたりする
+// 左上の「枚方宿」のカードは、押すたびに地点の一覧が開いたり閉じたりする
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -37,7 +37,7 @@ class _MapScreenState extends State<MapScreen> {
   StreamSubscription<Position>? _positionSub;
   // 地図や一覧で選んだ地点。null のときは下のカードを出さない
   String? _selectedId;
-  // 「地点の一覧」を開いているか
+  // 地点の一覧を開いているか
   bool _listOpen = false;
   bool _zoomLocked = false;
   bool _gettingLocation = false;
@@ -212,8 +212,9 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final stamped = appState.stampedCheckpointIds;
-    final target = nextTarget(stamped);
     final shown = findCheckpointById(_selectedId);
+    // 順番どおりに回るときの次の地点。地図では朱色で目立たせる
+    final target = nextTarget(stamped);
     final positions = _checkpointPositions;
 
     // 最後に読んだ地点のクイズにまだ答えていなければ知らせる（クイズ画面はその地点の問題を出すため）
@@ -333,7 +334,7 @@ class _MapScreenState extends State<MapScreen> {
                   ],
                 ),
 
-                // 左上：宿場名と進み具合、その下に地点の一覧
+                // 左上：宿場名と進み具合のカード。押すと地点の一覧が開く
                 Positioned(
                   top: 0,
                   left: 0,
@@ -346,12 +347,6 @@ class _MapScreenState extends State<MapScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _StatusChip(
-                              stampedCount: stamped.length,
-                              total: checkpoints.length,
-                              steps: appState.stepCount,
-                            ),
-                            const SizedBox(height: 8),
                             Flexible(
                               child: _SpotToggleList(
                                 open: _listOpen,
@@ -360,6 +355,7 @@ class _MapScreenState extends State<MapScreen> {
                                 targetId: target?.id,
                                 onSelect: _select,
                                 openWidth: listWidth,
+                                steps: appState.stepCount,
                               ),
                             ),
                           ],
@@ -433,9 +429,12 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-// 地図の上の地点の印。行った地点は金色のチェック、次の目的地は朱色で大きく出す
+// 地図の上の地点の印。
+// ・次の地点：朱色の塗りつぶしで大きく
+// ・行った地点：濃いめの灰色にチェック（色を付けずに、済んだ地点だと分かるようにする）
+// ・まだの地点：白地に藍色の番号
 class _CheckpointBadge extends StatelessWidget {
-  const _CheckpointBadge({required this.order, required this.stamped, required this.isTarget, this.selected = false});
+  const _CheckpointBadge({required this.order, required this.stamped, this.isTarget = false, this.selected = false});
 
   final int order;
   final bool stamped;
@@ -446,11 +445,17 @@ class _CheckpointBadge extends StatelessWidget {
   // 外側の大きさ（地図の印・一覧の行のどちらでも同じ）
   static const box = 52.0;
 
+  // 無彩色の灰色。白いチェックとの差がはっきりするよう、濃いめにしている
+  static const _visitedGray = Color(0xFF707070);
+
   @override
   Widget build(BuildContext context) {
     final size = (isTarget ? 44.0 : 36.0) + (selected ? 8 : 0);
-    final fill = stamped ? AppColors.gold : (isTarget ? AppColors.shu : Colors.white);
-    final fg = stamped || isTarget ? Colors.white : AppColors.indigo;
+    final fill = isTarget
+        ? AppColors.shu
+        : stamped
+            ? _visitedGray
+            : Colors.white;
     // 外側の大きさを固定する（一覧の行の左に置いたとき、横いっぱいに広がらないように）
     return SizedBox.square(
       dimension: box,
@@ -462,12 +467,16 @@ class _CheckpointBadge extends StatelessWidget {
           decoration: BoxDecoration(
             color: fill,
             shape: BoxShape.circle,
-            border: Border.all(color: stamped || isTarget ? Colors.white : AppColors.indigo, width: 3),
+            border: Border.all(color: isTarget || stamped ? Colors.white : AppColors.indigo, width: 3),
             boxShadow: [BoxShadow(color: Colors.black26, blurRadius: selected ? 8 : 4, offset: Offset(0, selected ? 2 : 0))],
           ),
           child: stamped
-              ? const Icon(Icons.check, color: Colors.white, size: 20)
-              : Text('$order', style: TextStyle(color: fg, fontSize: isTarget ? 20 : 16, fontWeight: FontWeight.w700)),
+              ? Icon(Icons.check, color: Colors.white, size: selected ? 24 : 20)
+              : Text('$order',
+                  style: TextStyle(
+                      color: isTarget ? Colors.white : AppColors.indigo,
+                      fontSize: (isTarget ? 20 : 16) + (selected ? 2 : 0),
+                      fontWeight: FontWeight.w700)),
         ),
       ),
     );
@@ -536,35 +545,6 @@ class _BubbleArrow extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.stampedCount, required this.total, required this.steps});
-
-  final int stampedCount;
-  final int total;
-  final int steps;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('枚方宿', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink)),
-            Text('スタンプ $stampedCount / $total', style: const TextStyle(fontSize: 15, color: AppColors.inkSoft)),
-            Text('今日 ${_withComma(steps)}歩', style: const TextStyle(fontSize: 15, color: AppColors.inkSoft)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MapButton extends StatelessWidget {
   const _MapButton({required this.icon, required this.tooltip, required this.onPressed});
 
@@ -587,8 +567,9 @@ class _MapButton extends StatelessWidget {
   }
 }
 
-// 左上の「地点の一覧」。押すたびに、その場で開いたり閉じたりする。
-// 閉じているときは小さなボタンの幅で、開いたときだけ openWidth まで広がる
+// 左上の「枚方宿」のカード（集めたスタンプの数と今日の歩数）。
+// 押すたびに、その下に地点の一覧が開いたり閉じたりする。
+// 閉じているときは中身の幅で、開いたときだけ openWidth まで広がる
 class _SpotToggleList extends StatelessWidget {
   const _SpotToggleList({
     required this.open,
@@ -597,6 +578,7 @@ class _SpotToggleList extends StatelessWidget {
     required this.targetId,
     required this.onSelect,
     required this.openWidth,
+    required this.steps,
   });
 
   final bool open;
@@ -605,13 +587,13 @@ class _SpotToggleList extends StatelessWidget {
   final String? targetId;
   final void Function(Checkpoint) onSelect;
   final double openWidth;
+  final int steps;
 
   @override
   Widget build(BuildContext context) {
-    const title = Text('地点の一覧', style: TextStyle(fontSize: 16, color: AppColors.indigo));
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(open ? 12 : 999),
+      borderRadius: BorderRadius.circular(14),
       elevation: 3,
       clipBehavior: Clip.antiAlias,
       child: AnimatedSize(
@@ -626,15 +608,37 @@ class _SpotToggleList extends StatelessWidget {
               InkWell(
                 onTap: onToggle,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
                   child: Row(
                     mainAxisSize: open ? MainAxisSize.max : MainAxisSize.min,
                     children: [
-                      const Icon(Icons.list, color: AppColors.indigo),
-                      const SizedBox(width: 6),
-                      open ? const Expanded(child: title) : title,
-                      const SizedBox(width: 4),
-                      Icon(open ? Icons.expand_less : Icons.expand_more, color: AppColors.indigo),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('枚方宿',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                          Text('スタンプ ${stampedIds.length} / ${checkpoints.length}',
+                              style: const TextStyle(fontSize: 16, color: AppColors.inkSoft)),
+                          // 歩数は数字だけを大きく太くして目立たせる
+                          Text.rich(
+                            TextSpan(
+                              style: const TextStyle(fontSize: 16, color: AppColors.inkSoft),
+                              children: [
+                                const TextSpan(text: '今日 '),
+                                TextSpan(
+                                  text: _withComma(steps),
+                                  style: const TextStyle(
+                                      fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.indigoDeep),
+                                ),
+                                const TextSpan(text: ' 歩'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      open ? const Spacer() : const SizedBox(width: 12),
+                      Icon(open ? Icons.expand_less : Icons.expand_more, color: AppColors.indigo, size: 30),
                     ],
                   ),
                 ),

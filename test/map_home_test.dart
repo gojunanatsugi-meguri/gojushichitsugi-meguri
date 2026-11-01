@@ -1,15 +1,17 @@
 // ホーム（地図）の画面のテスト。
-// 以前は「地点の一覧」を開くと、一覧の行の配置がエラーになって画面が固まっていたので、その再発防止も兼ねる
+// 以前は地点の一覧を開くと、一覧の行の配置がエラーになって画面が固まっていたので、その再発防止も兼ねる
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gojushichitsugi_meguri/main.dart';
 
+import 'quiz_flow_test.dart' show scanDemo;
 import 'widget_test.dart' show startWithName;
 
+// 左上の「枚方宿」のカードを押して、地点の一覧を開く・閉じる
 Future<void> toggleList(WidgetTester tester) async {
-  await tester.tap(find.text('地点の一覧'));
+  await tester.tap(find.text('枚方宿'));
   await tester.pumpAndSettle();
 }
 
@@ -33,7 +35,7 @@ void main() {
     }
   });
 
-  testWidgets('「地点の一覧」は押すたびに開いたり閉じたりする', (tester) async {
+  testWidgets('「枚方宿」のカードを押すたびに、地点の一覧が開いたり閉じたりする', (tester) async {
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'ひらかた');
 
@@ -63,7 +65,11 @@ void main() {
     expect(find.text('QRを読み取る'), findsNothing);
   });
 
-  testWidgets('次の目的地を選ぶと「次の目的地」と出る', (tester) async {
+  testWidgets('次の地点を選ぶと「次の目的地」、ほかのまだの地点は「選んだ地点」、行った地点は「スタンプ済みの地点」', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'ひらかた');
 
@@ -71,6 +77,17 @@ void main() {
     await tester.tap(find.text('枚方涼氷'));
     await tester.pumpAndSettle();
     expect(find.text('次の目的地'), findsOneWidget);
+
+    await toggleList(tester);
+    await tester.tap(find.text('くらわんか餅巴堂'));
+    await tester.pumpAndSettle();
+    expect(find.text('選んだ地点'), findsOneWidget);
+
+    await scanDemo(tester, 'くらわんか餅巴堂');
+    await tester.tap(find.byIcon(Icons.map));
+    await tester.pumpAndSettle();
+    expect(find.text('スタンプ済みの地点'), findsOneWidget);
+    expect(find.byIcon(Icons.check), findsWidgets);
   });
 
   testWidgets('現在地が分からないときは、歩数の代わりに現在地の出し方を案内する', (tester) async {
