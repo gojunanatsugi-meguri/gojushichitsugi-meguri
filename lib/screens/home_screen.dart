@@ -285,9 +285,11 @@ class _StampDetail extends StatelessWidget {
           Text('No.${checkpoint.order.toString().padLeft(2, '0')}　${spotName(checkpoint)}',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.ink)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          // お店のジャンル（和菓子店・カフェなど）は、項目名を付けずに札のように出す
+          Center(child: _GenreTag(text: spotCategory(checkpoint))),
+          const SizedBox(height: 12),
           _DetailRow(label: '押した日', value: got ? _dateLabel(at) : '-'),
-          _DetailRow(label: '種類', value: spotCategory(checkpoint)),
           _DetailRow(label: '場所', value: checkpoint.name),
           if (quizText != null) _DetailRow(label: 'クイズ', value: quizText),
           if (!got) ...[
@@ -297,6 +299,22 @@ class _StampDetail extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+// 小さな札。藍色の四角に、白抜きの文字（枠線・角の丸みなし）
+class _GenreTag extends StatelessWidget {
+  const _GenreTag({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      color: AppColors.indigo,
+      child: Text(text, style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w700)),
     );
   }
 }
