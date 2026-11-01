@@ -31,5 +31,10 @@ final appTheme = ThemeData(
   textTheme: const TextTheme(
     headlineMedium: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
   ),
+  // ボタンは丸めずに、角を少しだけ丸めた四角にそろえる（QR読取・クイズの「ヒント」などと同じ形）
+  filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(shape: _buttonShape)),
+  outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(shape: _buttonShape)),
   useMaterial3: true,
 );
+
+final _buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));

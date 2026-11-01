@@ -11,6 +11,8 @@ import 'widget_test.dart' show startApp;
 Future<void> scanDemo(WidgetTester tester, String shopName) async {
   await tester.tap(find.byIcon(Icons.qr_code_scanner));
   await tester.pumpAndSettle();
+  await tester.tap(find.text('開発用メニュー'));
+  await tester.pumpAndSettle();
   await tester.tap(find.textContaining('$shopName（'));
   await tester.pumpAndSettle();
 }
@@ -30,9 +32,11 @@ void main() {
 
     await tester.tap(find.text('クイズに進む'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ヒントを見る'));
+    await tester.tap(find.text('ヒント'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('ヒント：'), findsOneWidget);
+    expect(find.text('お店の看板をよく見てみましょう。'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10)); // カードの外を押して閉じる
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('KAORU'));
     await tester.pumpAndSettle();
@@ -46,10 +50,9 @@ void main() {
 
     await scanDemo(tester, 'KAORU COFFEE');
     expect(find.text('第2地点'), findsOneWidget);
-    // 地点が変わったのでヒントは閉じた状態に戻っている
     await tester.tap(find.text('クイズに進む'));
     await tester.pumpAndSettle();
-    expect(find.text('ヒントを見る'), findsOneWidget);
+    expect(find.text('ヒント'), findsOneWidget);
 
     await tester.tap(find.text('本屋'));
     await tester.pumpAndSettle();

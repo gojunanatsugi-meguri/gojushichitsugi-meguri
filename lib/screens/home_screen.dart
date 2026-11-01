@@ -263,16 +263,14 @@ class _StampDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final at = appState.stampedAt[checkpoint.id];
     final got = at != null;
+    final quiz = checkpoint.quiz;
     final result = appState.quizResults[checkpoint.id];
-    final quizText = checkpoint.quiz == null
+    // 答えたクイズは、下に問題と答えを出すので、ここでは答える前の状態だけを出す
+    final quizText = quiz == null || result != null
         ? null
         : !got
             ? 'スタンプを押すと挑戦できます'
-            : result == null
-                ? 'まだ答えていません'
-                : result
-                    ? '正解'
-                    : '不正解';
+            : 'まだ答えていません';
 
     return SafeArea(
       child: ListView(
@@ -291,11 +289,73 @@ class _StampDetail extends StatelessWidget {
           _DetailRow(label: '押した日', value: got ? _dateLabel(at) : '-'),
           _DetailRow(label: '場所', value: checkpoint.name),
           if (quizText != null) _DetailRow(label: 'クイズ', value: quizText),
+          if (quiz != null && result != null) ...[
+            const SizedBox(height: 16),
+            _QuizReview(quiz: quiz, correct: result),
+          ],
           if (!got) ...[
             const SizedBox(height: 12),
-            const Text('お店のQRを読むと、スタンプが押されます。',
+            const Text('地点のQRを読むと、スタンプが押されます。',
                 textAlign: TextAlign.center, style: TextStyle(color: AppColors.inkSoft)),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// 答えたクイズのふり返り。問題と選択肢を出し、正しい答えに印を付ける
+class _QuizReview extends StatelessWidget {
+  const _QuizReview({required this.quiz, required this.correct});
+
+  final Quiz quiz;
+  final bool correct;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('クイズ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.inkSoft)),
+              const Spacer(),
+              Text(correct ? '正解' : '不正解',
+                  style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700, color: correct ? AppColors.shu : AppColors.inkSoft)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(quiz.question, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink)),
+          const SizedBox(height: 10),
+          for (final option in quiz.options)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Icon(option == quiz.correctAnswer ? Icons.check_circle : Icons.circle_outlined,
+                      color: option == quiz.correctAnswer ? AppColors.indigo : AppColors.line, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      option == quiz.correctAnswer ? '$option（解答）' : option,
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: option == quiz.correctAnswer ? AppColors.ink : AppColors.inkSoft,
+                        fontWeight: option == quiz.correctAnswer ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

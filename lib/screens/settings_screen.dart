@@ -146,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       icon: Icons.directions_walk,
       title: '歩数',
       subtitle: '今日の歩数：${_withComma(appState.stepCount)}歩',
-      note: '歩数が0のままのときは、次の順に進んで許可してください。',
+      note: '歩数が0のままの場合は次の手順で許可してください。',
       action: _NumberedSteps(howTo),
     );
   }

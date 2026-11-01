@@ -49,12 +49,16 @@ class Quiz {
   final String correctAnswer;
   // ヒントは位に関係なく誰でも見られる
   final String hint;
+  // 問題の下に出す絵（例：'assets/quiz/cp1.png'）。絵がまだない問題は null。
+  // 絵を足すときは、pubspec.yaml の assets にもフォルダを書く
+  final String? image;
 
   const Quiz({
     required this.question,
     required this.options,
     required this.correctAnswer,
     required this.hint,
+    this.image,
   });
 }
 

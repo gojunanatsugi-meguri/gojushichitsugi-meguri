@@ -33,7 +33,7 @@ void main() {
 
     await tester.tap(find.text('No.01'));
     await tester.pumpAndSettle();
-    expect(find.text('お店のQRを読むと、スタンプが押されます。'), findsOneWidget);
+    expect(find.text('地点のQRを読むと、スタンプが押されます。'), findsOneWidget);
   });
 
   testWidgets('QRを読むと、その地点のスタンプが押されて、詳しい内容にお店が出る', (tester) async {
@@ -56,6 +56,28 @@ void main() {
     expect(find.text('まだ答えていません'), findsOneWidget);
   });
 
+  testWidgets('答えたクイズは、スタンプ帳で問題と答えをもう一度見られる', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const GojushichitsugiApp());
+    await startApp(tester);
+    await scanDemo(tester, '枚方凍氷');
+    await tester.tap(find.text('クイズに進む'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('SAKURA'));
+    await tester.pumpAndSettle();
+
+    await openStampBook(tester);
+    await tester.tap(find.text('No.01'));
+    await tester.pumpAndSettle();
+    expect(find.text('不正解'), findsOneWidget);
+    expect(find.textContaining('名前に入っている言葉は？'), findsOneWidget);
+    expect(find.text('KAORU（解答）'), findsOneWidget);
+    expect(find.text('まだ答えていません'), findsNothing);
+  });
+
   testWidgets('QRを読むと、獲得の画面にスタンプが押される動きつきで出る', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1;
@@ -76,10 +98,10 @@ void main() {
     expect(find.text('枚方凍氷'), findsOneWidget);
 
     // クイズは別の画面。「クイズに進む」を押すまで問題は出ない
-    expect(find.text('ヒントを見る'), findsNothing);
+    expect(find.text('ヒント'), findsNothing);
     await tester.tap(find.text('クイズに進む'));
     await tester.pumpAndSettle();
-    expect(find.text('ヒントを見る'), findsOneWidget);
+    expect(find.text('ヒント'), findsOneWidget);
     expect(find.byType(StampPress), findsNothing);
   });
 
