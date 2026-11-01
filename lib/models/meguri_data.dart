@@ -112,18 +112,19 @@ const List<Checkpoint> checkpoints = [
 // QRの中身は「gojushichi:」＋推測できないランダムな文字列。
 // 店IDをそのまま入れると、誰でも自分でQRを作れてしまうため。
 // 本番用の値は Firestore 側で管理し、アプリには埋め込まない想定
-// 座標：shop1（枚方凍氷 三矢町4-1）・shop3（呼人堂 岡本町10-3）・shop5（巴堂 伊加賀北町6-12）は
-// 住所から国土地理院の住所検索で取得した値。shop2・shop4 は住所未確認のため仮の値。
+// 座標：shop1（枚方凍氷 三矢町4-1）・shop2（KAORU COFFEE 堤町10-24）・shop3（呼人堂 岡本町10-3）・
+// shop4（うつわとカフェ Lau 堤町9-11）・shop5（巴堂 伊加賀北町6-12）は、
+// 住所から国土地理院の住所検索で取得した値。
 // 詳しくは docs/現地確認リスト.md
 const List<Shop> shops = [
-  Shop(id: 'shop1', checkpointId: 'cp1', name: '枚方涼氷', category: 'かき氷', coupon: '練乳シングルをサービス',
+  Shop(id: 'shop1', checkpointId: 'cp1', name: '枚方凍氷', category: 'かき氷', coupon: '練乳シングルをサービス',
       qrValue: 'gojushichi:3d9103edc06bc9d8', lat: 34.814632, lng: 135.643219, staffPin: '1570'),
   Shop(id: 'shop2', checkpointId: 'cp2', name: 'KAORU COFFEE', category: 'カフェ', coupon: 'ドリンク10%引き',
-      qrValue: 'gojushichi:eca15200491a98d4', lat: 34.8168, lng: 135.6455, staffPin: '2756'),
+      qrValue: 'gojushichi:eca15200491a98d4', lat: 34.811939, lng: 135.637451, staffPin: '2756'),
   Shop(id: 'shop3', checkpointId: 'cp3', name: '呼人堂', category: 'どら焼き', coupon: '1,500円以上で1個増量',
       qrValue: 'gojushichi:a99d2f037b7aad51', lat: 34.815006, lng: 135.645966, staffPin: '1998'),
   Shop(id: 'shop4', checkpointId: 'cp4', name: 'うつわとカフェ Lau', category: 'カフェ', coupon: 'お会計より100円引き',
-      qrValue: 'gojushichi:02df1fe67ef76483', lat: 34.8185, lng: 135.6418, staffPin: '1461'),
+      qrValue: 'gojushichi:02df1fe67ef76483', lat: 34.811928, lng: 135.638138, staffPin: '1461'),
   Shop(id: 'shop5', checkpointId: 'cp5', name: 'くらわんか餅巴堂', category: '餅菓子', coupon: '500円以上でやきもち1個',
       qrValue: 'gojushichi:9a2c4404c797a967', lat: 34.809853, lng: 135.640305, staffPin: '8083'),
 ];

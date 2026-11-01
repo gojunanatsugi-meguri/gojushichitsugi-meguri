@@ -43,7 +43,7 @@ void main() {
 
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'ひらかた');
-    await scanDemo(tester, '枚方涼氷');
+    await scanDemo(tester, '枚方凍氷');
     await openStampBook(tester);
 
     expect(find.text('？'), findsNWidgets(4));
@@ -51,7 +51,7 @@ void main() {
 
     await tester.tap(find.text('No.01'));
     await tester.pumpAndSettle();
-    expect(find.text('No.01　枚方涼氷'), findsOneWidget);
+    expect(find.text('No.01　枚方凍氷'), findsOneWidget);
     expect(find.text('かき氷'), findsOneWidget);
     expect(find.text('まだ答えていません'), findsOneWidget);
   });
@@ -63,7 +63,7 @@ void main() {
 
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'ひらかた');
-    await scanDemo(tester, '枚方涼氷');
+    await scanDemo(tester, '枚方凍氷');
 
     expect(find.byType(StampPress), findsOneWidget);
     // 動きが終わると、押した状態で止まっている
@@ -73,7 +73,7 @@ void main() {
     expect(opacity.opacity, 1);
     expect(find.text('壱'), findsOneWidget);
     expect(find.text('スタンプ獲得！'), findsOneWidget);
-    expect(find.text('枚方涼氷'), findsOneWidget);
+    expect(find.text('枚方凍氷'), findsOneWidget);
 
     // クイズは別の画面。「クイズに進む」を押すまで問題は出ない
     expect(find.text('ヒントを見る'), findsNothing);
@@ -90,7 +90,7 @@ void main() {
 
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'ひらかた');
-    await scanDemo(tester, '枚方涼氷');
+    await scanDemo(tester, '枚方凍氷');
 
     await tester.tap(find.byTooltip('設定'));
     await tester.pumpAndSettle();
@@ -112,7 +112,7 @@ void main() {
 
     await tester.pumpWidget(const GojushichitsugiApp());
     await startWithName(tester, 'ひらかた');
-    await scanDemo(tester, '枚方涼氷');
+    await scanDemo(tester, '枚方凍氷');
     expect(tester.takeException(), isNull);
   });
 

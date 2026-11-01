@@ -17,7 +17,7 @@ void main() {
 
   test('画面に出す地点の名前は、お店の名前になる', () {
     final cp1 = findCheckpointById('cp1')!;
-    expect(spotName(cp1), '枚方涼氷');
+    expect(spotName(cp1), '枚方凍氷');
     expect(spotCategory(cp1), 'かき氷');
   });
 
@@ -42,5 +42,14 @@ void main() {
     final same = estimateWalk(from, from);
     expect(same.steps, 50);
     expect(same.minutes, 1);
+  });
+
+  test('50歩以内か1分以内なら「地点周辺」、それより遠ければ歩数を出す', () {
+    const from = LatLng(34.8100, 135.6400);
+    expect(estimateWalk(from, from).isNearby, isTrue);
+    // 北へ約40m → 道のり約52m → 1分
+    expect(estimateWalk(from, const LatLng(34.81036, 135.6400)).isNearby, isTrue);
+    // 北へ約300m → 500歩・7分
+    expect(estimateWalk(from, const LatLng(34.8127, 135.6400)).isNearby, isFalse);
   });
 }

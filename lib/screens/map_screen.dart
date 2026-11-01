@@ -728,6 +728,10 @@ class _SpotPanel extends StatelessWidget {
           style: const TextStyle(fontSize: 15, color: AppColors.inkSoft));
     }
     final e = estimateWalk(from, to);
+    if (e.isNearby) {
+      return const Text('地点周辺です',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.shu));
+    }
     return Text('あと約${_withComma(e.steps)}歩（約${e.minutes}分）',
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.shu));
   }

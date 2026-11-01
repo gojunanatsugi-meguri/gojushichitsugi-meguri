@@ -74,7 +74,7 @@ void main() {
     await startWithName(tester, 'ひらかた');
 
     await toggleList(tester);
-    await tester.tap(find.text('枚方涼氷'));
+    await tester.tap(find.text('枚方凍氷'));
     await tester.pumpAndSettle();
     expect(find.text('次の目的地'), findsOneWidget);
 
@@ -95,7 +95,7 @@ void main() {
     await startWithName(tester, 'ひらかた');
 
     await toggleList(tester);
-    await tester.tap(find.text('枚方涼氷'));
+    await tester.tap(find.text('枚方凍氷'));
     await tester.pumpAndSettle();
     expect(find.text('右上の ◎ で現在地を出すと、ここまでの歩数が分かります'), findsOneWidget);
   });

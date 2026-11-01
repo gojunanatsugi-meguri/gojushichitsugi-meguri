@@ -15,6 +15,9 @@ class WalkEstimate {
   final int minutes;
 
   const WalkEstimate({required this.steps, required this.minutes});
+
+  // 位置情報には数十mの誤差があるので、50歩以内か1分以内なら「もう地点の周辺」とみなす
+  bool get isNearby => steps <= 50 || minutes <= 1;
 }
 
 // 地点のデータには座標がないので、その地点の協力店の位置の平均を地点の位置にする
