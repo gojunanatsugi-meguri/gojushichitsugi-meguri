@@ -8,8 +8,8 @@ import '../theme.dart';
 import 'name_screen.dart';
 import 'root_screen.dart';
 
-// 下タブの番号（root_screen.dart の並びと同じ）
-const _tabHome = 0;
+// 画面の番号（AppState.goToTab の番号。ホームは地図の画面）
+const _tabHome = 4;
 const _tabCoupons = 3;
 
 // 筆文字が入っていない端末でも、明朝の太字で和の雰囲気を出す
