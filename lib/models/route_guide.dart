@@ -26,6 +26,16 @@ LatLng? checkpointPosition(String checkpointId) {
   return LatLng(lat, lng);
 }
 
+// 画面に出す地点の名前は、「第1地点」ではなくお店の名前にする（お店が複数なら「・」でつなぐ）。
+// お店がない地点は、地点の名前のまま
+String spotName(Checkpoint cp) {
+  final list = shopsAt(cp.id);
+  return list.isEmpty ? cp.name : list.map((s) => s.name).join('・');
+}
+
+// お店の種類（かき氷、カフェなど）。重なりは1つにまとめる
+String spotCategory(Checkpoint cp) => shopsAt(cp.id).map((s) => s.category).toSet().join('・');
+
 // 次の目的地は、まだスタンプを持っていない地点のうち、順番が一番早いもの。
 // すべて集め終わっていたら null
 Checkpoint? nextTarget(Set<String> stampedIds) {

@@ -15,6 +15,12 @@ void main() {
     expect(nextTarget(checkpoints.map((c) => c.id).toSet()), isNull);
   });
 
+  test('画面に出す地点の名前は、お店の名前になる', () {
+    final cp1 = findCheckpointById('cp1')!;
+    expect(spotName(cp1), '枚方涼氷');
+    expect(spotCategory(cp1), 'かき氷');
+  });
+
   test('地点の位置は、その地点の協力店の位置になる', () {
     final shop = shopsAt('cp1').single;
     expect(checkpointPosition('cp1'), LatLng(shop.lat, shop.lng));

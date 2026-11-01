@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
+import '../widgets/app_header.dart';
 import 'coupons_screen.dart';
 import 'home_screen.dart';
 import 'map_screen.dart';
@@ -9,7 +10,8 @@ import 'scan_screen.dart';
 
 // 下タブでホーム（地図）・スタンプ帳・QR読取・クーポンを切り替える。
 // 画面の番号（goToTab の番号）は今までどおり 0:スタンプ帳 1:QR読取 2:クイズ 3:クーポン 4:地図 のまま。
-// クイズはQRを読んだあとに出るので、タブには並べない
+// クイズはQRを読んだあとに出るので、タブには並べない。
+// ホーム（地図）以外の画面では、右上に設定ボタンを重ねる（ホームは右上にズームのボタンがあるため）
 class RootScreen extends StatelessWidget {
   const RootScreen({super.key});
 
@@ -35,7 +37,22 @@ class RootScreen extends StatelessWidget {
     final appState = context.watch<AppState>();
 
     return Scaffold(
-      body: IndexedStack(index: appState.currentTabIndex, children: _screens),
+      body: Stack(
+        children: [
+          IndexedStack(index: appState.currentTabIndex, children: _screens),
+          if (appState.currentTabIndex != 4)
+            const Positioned(
+              top: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SettingsButton(),
+                ),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedTab(appState.currentTabIndex),
         onDestinationSelected: (i) => appState.goToTab(_tabScreens[i]),

@@ -25,8 +25,11 @@ void main() {
     await startWithName(tester, 'テスト');
 
     await scanDemo(tester, '枚方涼氷');
-    expect(find.text('第1地点のスタンプを獲得しました！'), findsOneWidget);
+    expect(find.text('スタンプ獲得！'), findsOneWidget);
+    expect(find.text('第1地点'), findsOneWidget);
 
+    await tester.tap(find.text('クイズに進む'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('ヒントを見る'));
     await tester.pumpAndSettle();
     expect(find.textContaining('ヒント：'), findsOneWidget);
@@ -42,8 +45,10 @@ void main() {
     expect(find.text('「KAORU COFFEE」のクーポンをもらいました。'), findsOneWidget);
 
     await scanDemo(tester, 'KAORU COFFEE');
-    expect(find.text('第2地点のスタンプを獲得しました！'), findsOneWidget);
+    expect(find.text('第2地点'), findsOneWidget);
     // 地点が変わったのでヒントは閉じた状態に戻っている
+    await tester.tap(find.text('クイズに進む'));
+    await tester.pumpAndSettle();
     expect(find.text('ヒントを見る'), findsOneWidget);
 
     await tester.tap(find.text('本屋'));

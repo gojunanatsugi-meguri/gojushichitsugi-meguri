@@ -12,13 +12,7 @@ import 'root_screen.dart';
 const _tabHome = 4;
 const _tabCoupons = 3;
 
-// 筆文字が入っていない端末でも、明朝の太字で和の雰囲気を出す
-const _mincho = TextStyle(
-  fontFamily: 'Hiragino Mincho ProN',
-  fontFamilyFallback: ['Yu Mincho', 'Noto Serif JP', 'serif'],
-  fontWeight: FontWeight.w900,
-  color: AppColors.ink,
-);
+const _mincho = minchoStyle;
 
 // アプリを開くと毎回最初に出る画面。
 // 名前が未入力なら名前の入力へ、入力済みならそのまま各画面へ進む

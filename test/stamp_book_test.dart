@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gojushichitsugi_meguri/main.dart';
+import 'package:gojushichitsugi_meguri/widgets/stamp_mark.dart';
 
 import 'quiz_flow_test.dart' show scanDemo;
 import 'widget_test.dart' show startWithName;
@@ -50,8 +51,69 @@ void main() {
 
     await tester.tap(find.text('No.01'));
     await tester.pumpAndSettle();
-    expect(find.text('枚方涼氷（かき氷）'), findsOneWidget);
+    expect(find.text('No.01　枚方涼氷'), findsOneWidget);
+    expect(find.text('かき氷'), findsOneWidget);
     expect(find.text('まだ答えていません'), findsOneWidget);
+  });
+
+  testWidgets('QRを読むと、獲得の画面にスタンプが押される動きつきで出る', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const GojushichitsugiApp());
+    await startWithName(tester, 'ひらかた');
+    await scanDemo(tester, '枚方涼氷');
+
+    expect(find.byType(StampPress), findsOneWidget);
+    // 動きが終わると、押した状態で止まっている
+    final opacity = tester.widget<Opacity>(
+      find.descendant(of: find.byType(StampPress), matching: find.byType(Opacity)),
+    );
+    expect(opacity.opacity, 1);
+    expect(find.text('壱'), findsOneWidget);
+    expect(find.text('スタンプ獲得！'), findsOneWidget);
+    expect(find.text('枚方涼氷'), findsOneWidget);
+
+    // クイズは別の画面。「クイズに進む」を押すまで問題は出ない
+    expect(find.text('ヒントを見る'), findsNothing);
+    await tester.tap(find.text('クイズに進む'));
+    await tester.pumpAndSettle();
+    expect(find.text('ヒントを見る'), findsOneWidget);
+    expect(find.byType(StampPress), findsNothing);
+  });
+
+  testWidgets('スタンプ獲得の画面の歯車から、設定画面で名前を変えられる', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const GojushichitsugiApp());
+    await startWithName(tester, 'ひらかた');
+    await scanDemo(tester, '枚方涼氷');
+
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    expect(find.text('ひらかた'), findsOneWidget);
+
+    await tester.tap(find.text('お名前'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'くずは');
+    await tester.pump();
+    await tester.tap(find.text('この名前にする'));
+    await tester.pumpAndSettle();
+    expect(find.text('くずは'), findsOneWidget);
+  });
+
+  testWidgets('小さい画面（iPhone SE）でも、スタンプ獲得の画面がはみ出さない', (tester) async {
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const GojushichitsugiApp());
+    await startWithName(tester, 'ひらかた');
+    await scanDemo(tester, '枚方涼氷');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('小さい画面（iPhone SE）でも、スタンプ帳がはみ出さない', (tester) async {

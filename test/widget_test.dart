@@ -40,8 +40,8 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('これではじめる'));
     await tester.pumpAndSettle();
-    expect(find.text('次の目的地'), findsOneWidget);
-    expect(find.text('第1地点'), findsOneWidget);
+    expect(find.text('地点の一覧'), findsOneWidget);
+    expect(find.text('スタンプ 0 / 5'), findsOneWidget);
   });
 
   testWidgets('名前を入力済みなら、「はじめる」でそのままホームへ進む', (tester) async {
@@ -52,7 +52,7 @@ void main() {
 
     await tester.tap(find.text('はじめる'));
     await tester.pumpAndSettle();
-    expect(find.text('次の目的地'), findsOneWidget);
+    expect(find.text('地点の一覧'), findsOneWidget);
 
     // スタンプ帳はタブから開ける
     await tester.tap(find.byIcon(Icons.menu_book));
