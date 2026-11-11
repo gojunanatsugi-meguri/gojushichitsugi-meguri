@@ -30,4 +30,13 @@ class ProgressStore {
   }
 
   Future<void> save(Map<String, dynamic> json) => prefs.setString(_key, jsonEncode(json));
+  static const _startedAtKey = 'meguri_started_at_v1';
+
+  DateTime? loadStartedAt() {
+    final s = prefs.getString(_startedAtKey);
+    return s == null ? null : DateTime.tryParse(s);
+  }
+
+  Future<void> saveStartedAt(DateTime at) =>
+      prefs.setString(_startedAtKey, at.toIso8601String());
 }
