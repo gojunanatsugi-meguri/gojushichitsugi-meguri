@@ -41,6 +41,7 @@ class AppState extends ChangeNotifier {
   int get stepCount => (distanceKm / 0.00075).round();
   // デモ用の暫定値。実際は Health 連携プラグインから取得した歩数を距離に換算する
   double distanceKm = 0;
+  DateTime startedAt = DateTime.now();
   // 地点ID → スタンプを獲得した日時。日時は、あとでサーバー側で
   // 「移動時間が短すぎないか」などを確かめるときに使えるよう残している
   final Map<String, DateTime> stampedAt = {};
@@ -63,7 +64,7 @@ class AppState extends ChangeNotifier {
 
   // 歩数から距離(km)を読む処理（main.dart から HealthService を渡す）。
   // null のとき（テストなど）は読まない。テスト環境にはヘルスケアがないため
-  final Future<double> Function()? readDistanceKm;
+  final Future<double> Function(DateTime since)? readDistanceKm;
 
   bool _disposed = false;
 
@@ -72,6 +73,13 @@ class AppState extends ChangeNotifier {
     if (saved != null) _restore(saved);
     final name = store?.loadPlayerName()?.trim();
     if (name != null && name.isNotEmpty) playerName = name;
+
+    final savedStart = store?.loadStartedAt();
+    if (savedStart != null) {
+      startedAt = savedStart;            // 2回目以降：保存してある日時を使う
+    } else {
+      store?.saveStartedAt(startedAt);   // 初回：今の日時を保存する
+    }
   }
 
   @override
@@ -121,7 +129,7 @@ class AppState extends ChangeNotifier {
     if (read == null) return;
     final double km;
     try {
-      km = await read();
+      km = await read(startedAt);
     } catch (_) {
       // ヘルスケア（Android はヘルスコネクト）が使えない端末でも落ちないよう、今の距離のままにする
       return;

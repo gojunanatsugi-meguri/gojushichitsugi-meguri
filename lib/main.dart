@@ -14,7 +14,7 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   runApp(GojushichitsugiApp(
     store: await createProgressStore(prefs),
-    readDistanceKm: HealthService.getTodayDistanceKm,
+    readDistanceKm: HealthService.getDistanceKmSince,
   ));
 }
 
@@ -23,7 +23,7 @@ class GojushichitsugiApp extends StatefulWidget {
   const GojushichitsugiApp({super.key, this.store, this.readDistanceKm});
 
   final ProgressStore? store;
-  final Future<double> Function()? readDistanceKm;
+  final Future<double> Function(DateTime since)? readDistanceKm;
 
   @override
   State<GojushichitsugiApp> createState() => _GojushichitsugiAppState();
